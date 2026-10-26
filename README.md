@@ -47,4 +47,6 @@ git tag v2.0.0 && git push origin main --tags
 
 ## الأصل والرخصة
 
+مجلسنا: تصميم وتطوير **Mo Idris** (2026).
+
 مبني على [offensiveee/majlis](https://github.com/offensiveee/majlis) برخصة [MIT](LICENSE). الخطوط والمكتبات ومصادر البيانات بترخيصها في [THIRD_PARTY.md](THIRD_PARTY.md).
