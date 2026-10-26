@@ -63,7 +63,7 @@ html, body {
 /* ---------- Header ---------- */
 .top { position: absolute; top: 56px; right: 100px; left: 100px; height: 110px; display: flex; justify-content: space-between; align-items: flex-start; }
 .title-ar { font-size: 58px; font-weight: 200; color: var(--gold-light); line-height: 1.25; text-shadow: 0 2px 10px rgba(0, 0, 0, .55); }
-.title-en { font-family: "Cormorant", serif; font-size: 22px; font-weight: 600; letter-spacing: 8px; color: var(--gold); text-shadow: 0 2px 8px rgba(0, 0, 0, .6); direction: ltr; text-align: right; }
+.title-en { font-family: "Kufi", sans-serif; font-size: 20px; font-weight: 600; letter-spacing: 6px; color: var(--gold); text-shadow: 0 2px 8px rgba(0, 0, 0, .6); direction: ltr; text-align: right; }
 
 .infobar {
   display: flex; align-items: stretch; margin-top: 8px; height: 84px;
@@ -84,7 +84,7 @@ html, body {
 .w-icon svg { width: 56px; height: 56px; }
 .w-temp { font-family: "Cormorant", serif; font-size: 52px; font-weight: 500; line-height: 1; direction: ltr; }
 .w-text { display: flex; flex-direction: column; font-size: 21px; line-height: 1.35; }
-.w-range { color: var(--muted); font-size: 19px; direction: ltr; text-align: right; font-family: "Cormorant", serif; font-weight: 600; font-size: 22px; }
+.w-range { color: var(--muted); direction: ltr; text-align: right; font-family: "Kufi", sans-serif; font-weight: 400; font-size: 19px; }
 
 /* ---------- Hero: clock + prayers ---------- */
 .hero { position: absolute; top: 178px; right: 100px; left: 100px; height: 446px; }
@@ -119,10 +119,10 @@ html, body {
 .time { padding-left: 58px; } /* balances the AM/PM so the digits sit in the centre */
 .day { direction: rtl; text-align: center; margin-top: 10px; font-size: 40px; font-weight: 400; color: var(--gold-light); text-shadow: 0 2px 12px rgba(0, 0, 0, .6); }
 .day .dot { font-size: 16px; color: var(--gold); margin: 0 18px; vertical-align: 8px; }
-.day-en { font-family: "Cormorant", serif; font-weight: 700; letter-spacing: 9px; font-size: 34px; }
+.day-en { font-family: "Kufi", sans-serif; font-weight: 600; letter-spacing: 6px; font-size: 30px; }
 .dates { direction: rtl; text-align: center; margin-top: 6px; font-size: 28px; color: var(--cream); text-shadow: 0 2px 10px rgba(0, 0, 0, .65); }
 .dates .sep { color: var(--gold); margin: 0 16px; }
-.greg { font-family: "Cormorant", serif; font-weight: 600; font-size: 32px; direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.greg { font-family: "Kufi", sans-serif; font-weight: 400; font-size: 28px; direction: ltr; unicode-bidi: isolate; display: inline-block; }
 
 /* ---------- Welcome strip ---------- */
 .welcome { position: absolute; top: 624px; right: 100px; left: 100px; text-align: center; }
@@ -133,7 +133,7 @@ html, body {
 .ayah.fade { opacity: 0; }
 
 /* ---------- Actions ---------- */
-.actions { position: absolute; top: 798px; right: 100px; left: 100px; display: flex; white-space: nowrap; }
+.actions { position: absolute; top: 786px; right: 100px; left: 100px; display: flex; white-space: nowrap; }
 .action {
   display: flex; align-items: center; padding: 6px 4px 8px; font-size: 22px;
   border-bottom: 2px solid transparent; text-shadow: 0 2px 8px rgba(0, 0, 0, .85);
@@ -160,7 +160,7 @@ html, body {
 .tile img, .tile .glyph { width: 64px; height: 64px; border-radius: 14px; object-fit: contain; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
 .tile .glyph { display: flex; align-items: center; justify-content: center; background: var(--panel-strong); border: 1px solid var(--panel-line); font-size: 32px; color: var(--gold-light); }
 .tile .label { margin-top: 4px; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 146px; text-shadow: 0 2px 6px rgba(0, 0, 0, .9); }
-.tile.focus { transform: scale(1.12); border-color: var(--gold-light); background: rgba(0, 0, 0, .25); }
+.tile.focus { transform: scale(1.08); border-color: var(--gold-light); background: rgba(0, 0, 0, .25); }
 .tile.focus .label { color: var(--gold-light); }
 .row.inputs .tile { width: auto; height: 46px; padding: 0 22px; border-radius: 24px; background: var(--panel); border-color: var(--panel-line); }
 .row.inputs .tile .label { margin: 0; font-size: 20px; }
@@ -176,8 +176,8 @@ html, body {
   box-shadow: inset 0 0 0 8px rgba(0, 0, 0, .25), inset 0 0 0 9px var(--panel-line), 0 30px 80px rgba(0, 0, 0, .6);
 }
 .panel-title { font-size: 42px; font-weight: 400; color: var(--gold-light); text-align: center; margin-bottom: 26px; }
-.panel-title .en { font-family: "Cormorant", serif; font-weight: 600; font-size: 30px; letter-spacing: 3px; color: var(--gold); margin-right: 14px; }
-.panel-foot { position: absolute; bottom: 22px; left: 0; right: 0; text-align: center; font-size: 19px; color: var(--muted); }
+.panel-title .en { font-family: "Kufi", sans-serif; font-weight: 400; font-size: 26px; letter-spacing: 3px; color: var(--gold); margin-right: 14px; }
+.panel-foot { position: absolute; bottom: 22px; left: 0; right: 0; text-align: center; font-size: 19px; color: var(--muted); font-family: "Kufi", sans-serif; }
 
 .wifi-panel { width: 1200px; }
 .wifi-body { display: flex; align-items: center; }
@@ -185,9 +185,9 @@ html, body {
 .qr svg, .qr img { width: 100%; height: 100%; display: block; }
 .wifi-info { flex: 1; }
 .wifi-hint { font-size: 28px; font-weight: 200; }
-.wifi-hint.en { font-family: "Cormorant", serif; font-size: 26px; font-weight: 600; color: var(--muted); margin-bottom: 26px; direction: ltr; text-align: right; }
+.wifi-hint.en { font-family: "Kufi", sans-serif; font-size: 22px; font-weight: 400; color: var(--muted); margin-bottom: 26px; direction: ltr; text-align: right; }
 .wifi-label { font-size: 22px; color: var(--gold); margin-top: 18px; }
-.wifi-value { font-family: "Cormorant", "Kufi", serif; font-size: 54px; font-weight: 600; color: var(--gold-light); direction: ltr; text-align: right; word-break: break-all; line-height: 1.2; }
+.wifi-value { font-family: "Kufi", sans-serif; font-size: 46px; font-weight: 600; color: var(--gold-light); direction: ltr; text-align: right; word-break: break-all; line-height: 1.2; }
 .wifi-empty { font-size: 30px; font-weight: 200; text-align: center; line-height: 1.8; }
 
 .radio-panel { width: 1500px; }
@@ -311,7 +311,7 @@ html, body {
 
 /* ---------- Display size (85-inch screens sit far away) ---------- */
 .size-large .title-ar { font-size: 68px; }
-.size-large .title-en { font-size: 26px; }
+.size-large .title-en { font-size: 23px; }
 .size-large .occ .o-name { font-size: 27px; } .size-large .occ .o-days { font-size: 22px; } .size-large .occ .o-days b { font-size: 28px; }
 .size-large .w-temp { font-size: 58px; } .size-large .w-text { font-size: 24px; } .size-large .w-range { font-size: 24px; }
 .size-large .infobar { height: 96px; border-radius: 48px; }
@@ -319,15 +319,15 @@ html, body {
 .size-large .prayers-title { font-size: 23px; } .size-large .next { font-size: 24px; } .size-large .next-name { font-size: 31px; } .size-large .next-in { font-size: 36px; }
 .size-large .p-row { font-size: 25px; line-height: 1.6; } .size-large .p-row .p-time { font-size: 30px; } .size-large .p-row .p-time small { font-size: 18px; }
 .size-large .p-row.sunrise { font-size: 20px; } .size-large .p-row.sunrise .p-time { font-size: 24px; }
-.size-large .day { font-size: 44px; } .size-large .day-en { font-size: 36px; } .size-large .dates { font-size: 32px; } .size-large .greg { font-size: 36px; }
-.size-large .welcome { top: 612px; } .size-large .welcome-main { font-size: 60px; } .size-large .welcome-sub { font-size: 30px; } .size-large .ayah { font-size: 32px; }
-.size-large .actions { top: 796px; } .size-large .action { font-size: 25px; } .size-large .actions > * + * { margin-inline-start: 30px; } .size-large .a-icon, .size-large .a-icon svg { width: 30px; height: 30px; } .size-large .radio-now { font-size: 22px; }
-.size-large .rows { top: 856px; }
+.size-large .day { font-size: 44px; } .size-large .day-en { font-size: 32px; } .size-large .dates { font-size: 32px; } .size-large .greg { font-size: 30px; }
+.size-large .welcome { top: 600px; } .size-large .welcome-main { font-size: 60px; } .size-large .welcome-sub { font-size: 30px; } .size-large .ayah { font-size: 32px; }
+.size-large .actions { top: 778px; } .size-large .action { font-size: 25px; } .size-large .actions > * + * { margin-inline-start: 30px; } .size-large .a-icon, .size-large .a-icon svg { width: 30px; height: 30px; } .size-large .radio-now { font-size: 22px; }
+.size-large .rows { top: 858px; }
 .size-large .tile { width: 192px; height: 142px; border-radius: 16px; }
 .size-large .tile img, .size-large .tile .glyph { width: 88px; height: 88px; border-radius: 18px; }
 .size-large .tile .glyph { font-size: 42px; }
 .size-large .tile .label { font-size: 24px; max-width: 186px; margin-top: 8px; }
-.size-large .tile.focus { transform: scale(1.1); }
+.size-large .tile.focus { transform: scale(1.06); }
 .size-large .row.inputs .tile { height: 56px; } .size-large .row.inputs .tile .label { font-size: 24px; }
 .size-large .toast { font-size: 30px; }
 .size-large .panel-title { font-size: 48px; } .size-large .set-row { font-size: 29px; } .size-large .set-sub { font-size: 22px; } .size-large .set-head { font-size: 27px; }
@@ -341,9 +341,9 @@ html, body {
 .size-xl .prayers-title { font-size: 25px; } .size-xl .next { font-size: 26px; } .size-xl .next-name { font-size: 34px; } .size-xl .next-in { font-size: 40px; }
 .size-xl .p-row { font-size: 28px; line-height: 1.65; } .size-xl .p-row .p-time { font-size: 33px; }
 .size-xl .day { font-size: 48px; } .size-xl .dates { font-size: 35px; } .size-xl .greg { font-size: 39px; }
-.size-xl .welcome { top: 612px; } .size-xl .welcome-main { font-size: 68px; } .size-xl .welcome-sub { font-size: 34px; } .size-xl .ayah { font-size: 34px; }
-.size-xl .actions { top: 800px; } .size-xl .action { font-size: 27px; } .size-xl .actions > * + * { margin-inline-start: 28px; }
-.size-xl .rows { top: 858px; }
+.size-xl .welcome { top: 598px; } .size-xl .welcome-main { font-size: 68px; } .size-xl .welcome-sub { font-size: 34px; } .size-xl .ayah { font-size: 34px; }
+.size-xl .actions { top: 780px; } .size-xl .action { font-size: 27px; } .size-xl .actions > * + * { margin-inline-start: 28px; }
+.size-xl .rows { top: 862px; }
 .size-xl .tile { width: 206px; height: 150px; }
 .size-xl .tile img, .size-xl .tile .glyph { width: 98px; height: 98px; }
 .size-xl .tile .label { font-size: 27px; max-width: 204px; }

@@ -25,7 +25,7 @@
     welcome: "حبابكم عشرة", welcomeSub: "حياكم الله في داركم",
     city: "riyadh", theme: "nile", ambientMin: 10, takeover: true, rotate: 0, bg: 0, size: "large",
     guestName: "", menu: [], menuNote: "", services: { wc: "", prayerRoom: "", note: "" },
-    guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false,
+    guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true,
     hidden: [], order: [], hiddenBg: [],
     wifi: { ssid: "", pass: "", type: "WPA" }, events: [],
     alertOverlay: true, chime: true, tvToast: true, remind: 10, radio: "", ramadanDays: [], sleepMin: 60,
@@ -191,12 +191,25 @@
     setTimeout(tick, 1000 - d.getMilliseconds() + 5);
   }
 
-  var ayahIndex = -1;
+  // Under the welcome: morning adhkar from Fajr to Dhuhr, evening adhkar from Asr to midnight
+  // (every 5 minutes), and verses the rest of the day (every 20 minutes).
+  var ayahIndex = -1, ayahList = "";
+  function currentAdhkar(now) {
+    if (!prefs.adhkar || prayerTimes.length < 6) return null;
+    var byKey = {};
+    prayerTimes.slice(0, 6).forEach(function (p) { byKey[p.key] = p.time; });
+    if (now >= byKey.fajr && now < byKey.dhuhr) return { key: "m", list: window.MAJLIS_ADHKAR_MORNING || [] };
+    if (now >= byKey.asr) return { key: "e", list: window.MAJLIS_ADHKAR_EVENING || [] };
+    return null;
+  }
   function rotateAyah() {
-    var list = window.MAJLIS_AYAT || [];
+    var now = new Date(), dz = currentAdhkar(now);
+    var list = dz && dz.list.length ? dz.list : (window.MAJLIS_AYAT || []);
+    var key = dz && dz.list.length ? dz.key : "a";
     if (!list.length) return;
-    var i = Math.floor(Date.now() / (20 * 60000)) % list.length;
-    if (i === ayahIndex) return;
+    var i = Math.floor(Date.now() / ((key === "a" ? 20 : 5) * 60000)) % list.length;
+    if (i === ayahIndex && key === ayahList) return;
+    ayahList = key;
     var first = ayahIndex === -1, el = $("ayah");
     ayahIndex = i;
     $("ambAyah").textContent = list[i];
@@ -251,6 +264,7 @@
     sendPrayerPlan();
     lastNextKey = "";
     prayerTick(new Date());
+    ayahIndex = -1; rotateAyah();
   }
   // The Android helper can't calculate prayer times itself, so the screen sends it the week ahead.
   function sendPrayerPlan() {
@@ -917,6 +931,7 @@
     });
     toggle("وضع الجمعة", "تذكير بسورة الكهف وتسمية صلاة الجمعة", "friday", function () { computePrayers(); renderOccasions(); });
     toggle("إذاعة القرآن صباح الجمعة", "تشتغل تلقائياً على شاشة المجلس", "fridayRadio");
+    toggle("أذكار الصباح والمساء", "تحت الترحيب: الصباح بعد الفجر، والمساء بعد العصر", "adhkar", function () { ayahIndex = -1; rotateAyah(); });
     if (Platform.hasHelper) chooser("تذكير قبل الأذان", "إشعار قبل موعد الصلاة", prefs.remind ? arDigits(prefs.remind) + " دقائق" : "متوقف", function (s) {
       prefs.remind = cycle(REMIND, prefs.remind, s); savePrefs(["remind"]);
     });
@@ -961,6 +976,7 @@
       }, icon, "");
     });
     row("button", '<div class="set-main" style="text-align:center">تم</div>', function (k) { if (k === 13) closeOverlay(); });
+    row("info", '<div class="set-main" style="text-align:center"><span class="set-sub">مجلسنا · Mo Idris · 2.0.1 · مبني على Majlis برخصة MIT</span></div>', null);
 
     settings.i = Math.max(0, Math.min(settings.items.length - 1, settings.i));
     while (settings.i < settings.items.length - 1 && !settings.items[settings.i].key) settings.i++;
