@@ -1,0 +1,43 @@
+<!doctype html><link rel="stylesheet" href="_base.css"><svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <linearGradient id="base" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2440"/><stop offset="1" stop-color="#0c1020"/></linearGradient>
+ <pattern id="zig" width="120" height="60" patternUnits="userSpaceOnUse">
+  <path d="M0 60 L30 10 L60 60 L90 10 L120 60" fill="none" stroke="#e5c27a" stroke-width="6" stroke-linejoin="round"/>
+ </pattern>
+ <pattern id="tri" width="100" height="100" patternUnits="userSpaceOnUse">
+  <path d="M0 100 L50 20 L100 100 Z" fill="#c8552f" opacity=".85"/>
+  <path d="M20 100 L50 50 L80 100 Z" fill="#f2e6cc"/>
+  <path d="M40 100 L50 82 L60 100 Z" fill="#1b2440"/>
+ </pattern>
+ <pattern id="dots" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="4" fill="#f2e6cc" opacity=".8"/></pattern>
+ <pattern id="dia" width="90" height="90" patternUnits="userSpaceOnUse">
+  <path d="M45 6 L84 45 L45 84 L6 45 Z" fill="none" stroke="#3f8f7a" stroke-width="5"/>
+  <path d="M45 24 L66 45 L45 66 L24 45 Z" fill="#e5c27a"/>
+ </pattern>
+ <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .08 0"/></filter>
+ <filter id="soft"><feGaussianBlur stdDeviation="1.2"/></filter>
+</defs>
+<rect width="1920" height="1080" fill="url(#base)"/>
+<!-- woven bands, top to bottom -->
+<g filter="url(#soft)">
+ <rect x="0" y="40" width="1920" height="60" fill="url(#zig)"/>
+ <rect x="0" y="118" width="1920" height="14" fill="#c8552f"/>
+ <rect x="0" y="150" width="1920" height="100" fill="url(#tri)"/>
+ <rect x="0" y="268" width="1920" height="14" fill="#e5c27a"/>
+ <rect x="0" y="300" width="1920" height="40" fill="url(#dots)"/>
+ <rect x="0" y="358" width="1920" height="14" fill="#3f8f7a"/>
+ <rect x="0" y="390" width="1920" height="90" fill="url(#dia)"/>
+ <rect x="0" y="498" width="1920" height="14" fill="#c8552f"/>
+ <rect x="0" y="530" width="1920" height="60" fill="url(#zig)" transform="translate(60 0)"/>
+ <rect x="0" y="608" width="1920" height="14" fill="#e5c27a"/>
+ <rect x="0" y="640" width="1920" height="100" fill="url(#tri)" transform="translate(50 0)"/>
+ <rect x="0" y="758" width="1920" height="14" fill="#3f8f7a"/>
+ <rect x="0" y="790" width="1920" height="40" fill="url(#dots)" transform="translate(20 0)"/>
+ <rect x="0" y="848" width="1920" height="14" fill="#c8552f"/>
+ <rect x="0" y="880" width="1920" height="90" fill="url(#dia)" transform="translate(45 0)"/>
+ <rect x="0" y="988" width="1920" height="14" fill="#e5c27a"/>
+ <rect x="0" y="1020" width="1920" height="60" fill="url(#zig)"/>
+</g>
+<rect width="1920" height="1080" fill="#0c1020" opacity=".28"/>
+<rect width="1920" height="1080" filter="url(#grain)"/>
+</svg>

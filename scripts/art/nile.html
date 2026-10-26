@@ -1,0 +1,51 @@
+<!doctype html><link rel="stylesheet" href="_base.css"><svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#07111f"/><stop offset=".38" stop-color="#1b2b4a"/><stop offset=".6" stop-color="#6b4a3a"/><stop offset=".7" stop-color="#e09a4e"/></linearGradient>
+ <radialGradient id="sun" cx="38%" cy="69%" r="24%"><stop offset="0" stop-color="#ffe9b8" stop-opacity=".95"/><stop offset=".3" stop-color="#ffc06a" stop-opacity=".55"/><stop offset="1" stop-color="#ff9a44" stop-opacity="0"/></radialGradient>
+ <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9955a"/><stop offset=".25" stop-color="#5a4a52"/><stop offset=".6" stop-color="#17263f"/><stop offset="1" stop-color="#070d18"/></linearGradient>
+ <linearGradient id="bank" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1d14"/><stop offset="1" stop-color="#0b0804"/></linearGradient>
+ <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="4"/><feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .06 0"/></filter>
+ <g id="palm">
+  <path d="M0 0 C -6 -90 -4 -180 2 -260" stroke="#120b06" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <g fill="#0f0a05">
+   <path d="M2 -260 C 40 -300 110 -300 160 -270 C 100 -280 50 -268 2 -250 Z"/>
+   <path d="M2 -260 C -40 -305 -110 -305 -160 -275 C -100 -283 -50 -270 2 -250 Z"/>
+   <path d="M2 -258 C 30 -320 60 -350 70 -390 C 45 -345 25 -310 2 -250 Z"/>
+   <path d="M2 -258 C -25 -325 -55 -355 -65 -395 C -40 -350 -20 -312 2 -250 Z"/>
+   <path d="M2 -256 C 60 -250 120 -230 170 -190 C 110 -215 60 -228 2 -240 Z"/>
+   <path d="M2 -256 C -60 -250 -120 -232 -175 -195 C -110 -218 -60 -230 2 -240 Z"/>
+   <path d="M2 -256 C 40 -235 75 -200 95 -150 C 60 -190 35 -215 2 -236 Z"/>
+   <path d="M2 -256 C -40 -235 -75 -200 -95 -150 C -60 -190 -35 -215 2 -236 Z"/>
+  </g>
+ </g>
+</defs>
+<rect width="1920" height="1080" fill="url(#sky)"/>
+<g fill="#fff" opacity=".75"><circle cx="150" cy="80" r="1.4"/><circle cx="380" cy="190" r="1"/><circle cx="560" cy="60" r="1.2"/><circle cx="760" cy="150" r="1"/><circle cx="990" cy="40" r="1.5"/><circle cx="1230" cy="120" r="1"/><circle cx="1480" cy="70" r="1.3"/><circle cx="1700" cy="200" r="1"/><circle cx="1860" cy="110" r="1.1"/><circle cx="300" cy="300" r=".9"/><circle cx="1100" cy="260" r=".9"/><circle cx="1600" cy="320" r=".9"/><circle cx="880" cy="330" r=".8"/></g>
+<path d="M1500 120 a34 34 0 1 0 24 60 a28 28 0 1 1 -24 -60 z" fill="#f3e2b8" opacity=".85"/>
+<rect width="1920" height="1080" fill="url(#sun)"/>
+<!-- far bank with Meroe silhouettes -->
+<path d="M0 745 L1920 745 L1920 790 L0 790 Z" fill="#1a1208"/>
+<g fill="#120c06">
+ <path d="M1180 745 L1230 665 L1280 745 Z"/><path d="M1290 745 L1332 683 L1374 745 Z"/><path d="M1385 745 L1440 650 L1495 745 Z"/><path d="M1505 745 L1545 690 L1585 745 Z"/>
+ <path d="M300 745 L345 672 L390 745 Z"/><path d="M410 745 L446 692 L482 745 Z"/>
+</g>
+<use href="#palm" transform="translate(1680 760) scale(.75)"/>
+<use href="#palm" transform="translate(1790 770) scale(.6) scale(-1 1)"/>
+<use href="#palm" transform="translate(120 765) scale(.7) scale(-1 1)"/>
+<!-- water -->
+<path d="M0 790 L1920 790 L1920 1080 L0 1080 Z" fill="url(#water)"/>
+<g stroke="#f6c57e" stroke-linecap="round" opacity=".55">
+ <path d="M640 812 h120" stroke-width="2"/><path d="M600 836 h210" stroke-width="2.5"/><path d="M660 862 h130" stroke-width="2"/><path d="M590 890 h260" stroke-width="3"/><path d="M640 922 h170" stroke-width="2.5"/><path d="M560 958 h330" stroke-width="3.5"/><path d="M620 1000 h230" stroke-width="3"/><path d="M520 1046 h420" stroke-width="4"/>
+</g>
+<g stroke="#8aa0c8" stroke-linecap="round" opacity=".18">
+ <path d="M1100 830 h180" stroke-width="2"/><path d="M1300 900 h260" stroke-width="2"/><path d="M160 870 h220" stroke-width="2"/><path d="M1450 1010 h300" stroke-width="2"/><path d="M250 990 h280" stroke-width="2"/>
+</g>
+<!-- felucca -->
+<g transform="translate(1010 905)">
+ <path d="M-70 0 C -40 14 40 14 70 0 L 60 -8 L -60 -8 Z" fill="#0d0905"/>
+ <path d="M-2 -8 L -2 -120" stroke="#0d0905" stroke-width="3"/>
+ <path d="M-2 -118 C 40 -100 60 -60 58 -10 L -2 -10 Z" fill="#f3e4c6" opacity=".9"/>
+</g>
+<path d="M0 1000 C 300 980 520 1030 760 1040 C 1000 1050 1200 1010 1920 1030 L1920 1080 L0 1080 Z" fill="url(#bank)"/>
+<rect width="1920" height="1080" filter="url(#grain)"/>
+</svg>

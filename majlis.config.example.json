@@ -1,0 +1,15 @@
+{
+  "majlisName": "مجلسنا",
+  "majlisNameEn": "MAJLISNA",
+  "welcome": "حبابكم عشرة",
+  "welcomeSub": "حياكم الله في داركم",
+  "city": "riyadh",
+  "theme": "nile",
+  "frame": "nubian",
+  "size": "large",
+  "wifi": {
+    "ssid": "",
+    "pass": "",
+    "type": "WPA"
+  }
+}
