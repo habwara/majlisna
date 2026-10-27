@@ -101,13 +101,13 @@ class HelperService : Service() {
             p == "/api/guest" && r.method == "GET" -> return json(JSONObject()
                 .put("majlisName", prefs.optString("majlisName", "مجلسنا")).put("welcome", prefs.optString("welcome", "حبابكم عشرة"))
                 .put("menu", prefs.optJSONArray("menu") ?: JSONArray()).put("menuNote", prefs.optString("menuNote"))
-                .put("wifi", prefs.optJSONObject("wifi") ?: JSONObject()).put("services", prefs.optJSONObject("services") ?: JSONObject()))
+                .put("wifi", if (prefs.optBoolean("wifiQrOnly", false)) JSONObject() else (prefs.optJSONObject("wifi") ?: JSONObject())).put("services", prefs.optJSONObject("services") ?: JSONObject()))
             p == "/api/guest" && r.method == "POST" -> {
                 val now = System.currentTimeMillis()
                 if (now - lastGuestAt < 4000) return json(JSONObject().put("error", "انتظر لحظة ثم أعد المحاولة"), 429)
                 val v = JSONObject(r.text())
                 val type = v.optString("type"); val text = v.optString("text").trim().take(120); val name = v.optString("name").trim().take(40)
-                if (text.isEmpty() || (type != "request" && type != "note")) return json(JSONObject().put("error", "بيانات ناقصة"), 400)
+                if (text.isEmpty() || (type != "request" && type != "note" && type != "dua")) return json(JSONObject().put("error", "بيانات ناقصة"), 400)
                 lastGuestAt = now
                 val g = JSONObject().put("id", now).put("type", type).put("text", text).put("name", name).put("at", now)
                 guest = g
@@ -119,7 +119,7 @@ class HelperService : Service() {
                     prefs.put("guestbook", book); savePrefs()
                 }
                 if (MainActivity.visible != null) push(JSONObject().put("event", "guest").put("guest", g))
-                else toast((if (type == "request") "🫖 طلب من الضيوف: " else "💬 تحية من الضيوف: ") + text + (if (name.isNotEmpty()) " · $name" else ""))
+                else toast((if (type == "request") "🫖 طلب من الضيوف: " else if (type == "dua") "🤲 دعاء من الضيوف: " else "💬 تحية من الضيوف: ") + text + (if (name.isNotEmpty()) " · $name" else ""))
                 note("guest $type")
                 return json(JSONObject().put("ok", true))
             }
