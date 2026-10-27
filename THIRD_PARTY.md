@@ -28,3 +28,5 @@ The backgrounds and the icon were drawn for this project (sources in `scripts/ar
 | [Tizen Studio](https://developer.tizen.org) | Signing and installing on Samsung | Samsung's SDK terms (installed by you) |
 
 LG, webOS, Samsung and the names and logos of streaming apps are trademarks of their owners. App icons are read from your own TV at runtime and aren't included in this repository.
+
+- **Inter** (Latin text), by Rasmus Andersson, SIL Open Font License 1.1. Subset to Latin in src/app/fonts/inter-*.woff2 and src/service/assets/.
