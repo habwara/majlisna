@@ -47,7 +47,7 @@ var DEFAULTS = {
   city: "riyadh", theme: "nile", ambientMin: 10, takeover: true, rotate: 0, bg: 0, size: "large",
   hidden: [], order: [], hiddenBg: [],
   guestName: "", menu: [], menuNote: "", services: { wc: "", prayerRoom: "", note: "" },
-  guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false,
+  guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true, wifiQrOnly: false, adhkarOpen: "", adhkarIndex: 0, proverbs: [], ramadanMode: true, fridayReminder: true,
   wifi: { ssid: "", pass: "", type: "WPA" }, events: [],
   alertOverlay: true, chime: true, tvToast: true, remind: 10, radio: "",
   ramadanDays: [], // filled in by the home app, which has the Umm al-Qura calendar
@@ -424,13 +424,13 @@ http.createServer(function (req, res) {
   if (p === "/manifest.json") return send(res, 200, MANIFEST, "application/manifest+json");
   if (p === "/guest" || p === "/guest/") return send(res, 200, GUEST_PAGE, "text/html; charset=utf-8");
   // The guest page needs no PIN: it only sees the hospitality menu and can send a request or a greeting.
-  if (p === "/api/guest" && req.method === "GET") return send(res, 200, { majlisName: prefs.majlisName, welcome: prefs.welcome, menu: prefs.menu || [], menuNote: prefs.menuNote || "", wifi: prefs.wifi || {}, services: prefs.services || {} });
+  if (p === "/api/guest" && req.method === "GET") return send(res, 200, { majlisName: prefs.majlisName, welcome: prefs.welcome, menu: prefs.menu || [], menuNote: prefs.menuNote || "", wifi: prefs.wifiQrOnly ? {} : (prefs.wifi || {}), services: prefs.services || {} });
   if (p === "/api/guest" && req.method === "POST") {
     return jsonBody(req, function (v) {
       var now = Date.now();
       if (now - lastGuestAt < 4000) return send(res, 429, { error: "انتظر لحظة ثم أعد المحاولة" });
       var type = v.type, text = String(v.text || "").trim().slice(0, 120), name = String(v.name || "").trim().slice(0, 40);
-      if (!text || (type !== "request" && type !== "note")) return send(res, 400, { error: "بيانات ناقصة" });
+      if (!text || (type !== "request" && type !== "note" && type !== "dua")) return send(res, 400, { error: "بيانات ناقصة" });
       lastGuestAt = now;
       guest = { id: now, type: type, text: text, name: name, at: now };
       if (type === "request") { requests.push(guest); if (requests.length > 30) requests.shift(); }

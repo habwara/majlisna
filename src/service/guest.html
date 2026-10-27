@@ -67,11 +67,12 @@
 <div class="card">
   <p>تظهر على شاشة المجلس وتُحفظ في سجل الزيارات</p>
   <textarea id="noteText" maxlength="120" placeholder="بارك الله فيكم وفي داركم"></textarea>
-  <button class="btn" id="sendNote">أرسل التحية</button>
+  <div style="display:flex;gap:10px"><button class="btn" id="sendNote">أرسل تحية</button><button class="btn ghost" id="sendDua">🤲 أرسل دعاء</button></div>
+  <p style="margin-top:10px">الدعاء يُعرض على جدار الدعاء في وضع الهدوء</p>
 </div>
 
 <div id="wifiWrap" style="display:none">
-  <div class="ttl">واي فاي الضيوف</div>
+  <div class="ttl">الواي فاي</div>
   <div class="card">
     <div class="wifi"><span>الشبكة</span><b id="ssid"></b></div>
     <div class="wifi" id="passRow"><span>كلمة المرور</span><b id="pass"></b></div>
@@ -132,6 +133,7 @@
     }).catch(function () { say("تعذر الاتصال بالتلفاز", true); });
   }
   $("sendReq").onclick = function () { var t = $("reqText").value.trim(); if (!t) { say("اكتب الطلب", true); return; } buzz(); send("request", t, function () { $("reqText").value = ""; say("وصل طلبك ✓"); buzz(20); }); };
+  $("sendDua").onclick = function () { var t = $("noteText").value.trim(); if (!t) { say("اكتب الدعاء", true); return; } buzz(); send("dua", t, function () { $("noteText").value = ""; say("تقبّل الله، وصل دعاؤك ✓"); buzz(20); }); };
   $("sendNote").onclick = function () { var t = $("noteText").value.trim(); if (!t) { say("اكتب التحية", true); return; } buzz(); send("note", t, function () { $("noteText").value = ""; say("وصلت تحيتك، شكراً لكم ✓"); buzz(20); }); };
   $("copyPass").onclick = function () { var t = $("pass").textContent; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { say("تم النسخ ✓"); }, function () { say(t); }); };
   load();

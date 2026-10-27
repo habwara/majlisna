@@ -283,6 +283,15 @@
       <p>كبّر الخط والتطبيقات للشاشات الكبيرة</p>
       <div class="seg" data-seg="size"><button data-v="normal">عادي</button><button data-v="large">كبير</button><button data-v="xl">كبير جداً</button></div>
     </div>
+    <div class="ttl">الأذكار على الشاشة</div>
+    <div class="card">
+      <p>تفتح لوحة الأذكار على التلفزيون وتتنقل بين الأذكار من هنا</p>
+      <div class="seg" id="dzSet"><button data-v="m">الصباح</button><button data-v="e">المساء</button></div>
+      <div id="dzNow" style="margin:14px 0 6px;font-size:17px;line-height:1.9;text-align:center;color:var(--gold-l);min-height:40px"></div>
+      <div id="dzPos" style="text-align:center;color:var(--muted);font-size:12.5px"></div>
+      <div class="row"><button class="btn ghost" id="dzPrev"><svg class="i"><use href="#i-up"/></svg>السابق</button><button class="btn ghost" id="dzNext"><svg class="i"><use href="#i-down"/></svg>التالي</button></div>
+      <button class="btn danger" id="dzClose">إغلاق اللوحة على الشاشة</button>
+    </div>
     <div class="ttl">الثيم</div>
     <div class="card"><div class="swatches" id="themes"></div></div>
     <div class="ttl">لون الزخارف</div>
@@ -327,6 +336,15 @@
       <button class="btn" id="menuSave">حفظ</button>
     </div>
 
+    <div class="ttl">مثل اليوم</div>
+    <div class="card">
+      <p>مثل سوداني يتبدّل يومياً ويظهر تحت قائمة الضيافة على الشاشة</p>
+      <div id="pvToday" style="text-align:center;color:var(--gold-l);font-size:16px;margin-bottom:10px"></div>
+      <button class="btn ghost" id="pvShow">اعرضه الآن بطاقة على الشاشة</button>
+      <label class="f">أمثال إضافية من عندك (سطر لكل مثل)</label>
+      <textarea id="pvExtra" rows="3" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--card-b);background:rgba(0,0,0,.28);color:var(--cream);font:inherit;font-size:15px"></textarea>
+      <button class="btn" id="pvSave">حفظ</button>
+    </div>
     <div class="ttl">خدمات الضيوف</div>
     <div class="card">
       <p>تظهر مع الواي فاي واتجاه القبلة في «خدمات الضيوف» وفي صفحة الضيف</p>
@@ -359,12 +377,13 @@
       <div class="sw"><div class="t">اعرض البطاقة حتى لو على تطبيق ثاني</div><label class="tog"><input type="checkbox" id="evFull"><i></i></label></div>
       <button class="btn" id="addEvent">أضف</button>
     </div>
-    <div class="ttl">واي فاي الضيوف</div>
+    <div class="ttl">الواي فاي</div>
     <div class="card">
       <label class="f">اسم الشبكة</label><input id="ssid" type="text" dir="ltr" autocomplete="off" autocapitalize="off">
       <label class="f">كلمة المرور</label><input id="wpass" type="text" dir="ltr" autocomplete="off" autocapitalize="off">
       <label class="f">الحماية</label>
       <div class="seg" id="wtype"><button data-v="WPA">WPA/WPA2</button><button data-v="WEP">WEP</button><button data-v="nopass">بدون</button></div>
+      <div class="sw"><div class="t">الباركود فقط<small>يخفي اسم الشبكة وكلمة المرور من الشاشة وصفحة الضيف</small></div><label class="tog"><input type="checkbox" data-pref="wifiQrOnly"><i></i></label></div>
       <div class="row"><button class="btn" id="saveWifi">حفظ</button><button class="btn ghost" id="showWifi">اعرضه الآن</button></div>
     </div>
   </section>
@@ -403,6 +422,8 @@
     <div class="card">
       <div class="sw"><div class="t">وضع الجمعة<small>تذكير بسورة الكهف وتسمية صلاة الجمعة</small></div><label class="tog"><input type="checkbox" data-pref="friday"><i></i></label></div>
       <div class="sw"><div class="t">إذاعة القرآن صباح الجمعة<small>تشتغل تلقائياً على شاشة المجلس</small></div><label class="tog"><input type="checkbox" data-pref="fridayRadio"><i></i></label></div>
+      <div class="sw"><div class="t">تذكير سنن الجمعة<small>قبل صلاة الجمعة بساعة</small></div><label class="tog"><input type="checkbox" data-pref="fridayReminder"><i></i></label></div>
+      <div class="sw"><div class="t">وضع رمضان<small>عدّاد الإفطار، الإمساك، دعاء الإفطار، والليالي الوترية</small></div><label class="tog"><input type="checkbox" data-pref="ramadanMode"><i></i></label></div>
     </div>
     <div class="ttl">التلفاز</div>
     <div class="card">
@@ -562,6 +583,20 @@
     $("installX").onclick = function () { $("install").classList.remove("show"); try { localStorage.setItem("installHint", "x"); } catch (e) {} };
   })();
 
+  // ---------- Adhkar panel on the TV ----------
+  function dzList() { return (state.prefs.adhkarOpen === "e" ? data.adhkarEvening : data.adhkarMorning) || []; }
+  function renderDz() {
+    var p = state.prefs, list = dzList(), i = p.adhkarIndex || 0;
+    setSeg($("dzSet"), p.adhkarOpen || "");
+    $("dzNow").textContent = p.adhkarOpen && list.length ? list[((i % list.length) + list.length) % list.length] : "اللوحة مغلقة";
+    $("dzPos").textContent = p.adhkarOpen && list.length ? arD(((i % list.length) + list.length) % list.length + 1) + " / " + arD(list.length) : "";
+  }
+  function dzSave(set, i) { save({ adhkarOpen: set, adhkarIndex: i }, false).then(renderDz); }
+  $("dzSet").addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; buzz(); dzSave(b.dataset.v, 0); });
+  $("dzPrev").onclick = function () { if (!state.prefs.adhkarOpen) return; buzz(); dzSave(state.prefs.adhkarOpen, (state.prefs.adhkarIndex || 0) - 1); };
+  $("dzNext").onclick = function () { if (!state.prefs.adhkarOpen) return; buzz(); dzSave(state.prefs.adhkarOpen, (state.prefs.adhkarIndex || 0) + 1); };
+  $("dzClose").onclick = function () { buzz(); dzSave("", 0); };
+
   // ---------- Screen ----------
   $("saveTexts").onclick = function () { save({ majlisName: $("majlisName").value, majlisNameEn: $("majlisNameEn").value, welcome: $("welcome").value, welcomeSub: $("welcomeSub").value }); };
   function renderLooks() {
@@ -634,11 +669,17 @@
       var d = document.createElement("div"); d.className = "req";
       var dt = new Date(g.at);
       d.innerHTML = '<div class="n"><b></b><small></small></div><button class="ib"><svg class="i"><use href="#i-x"/></svg></button>';
-      d.querySelector("b").textContent = g.text; d.querySelector("small").textContent = (g.name || "ضيف") + " · " + dt.toLocaleDateString("ar-SA") + " " + t12(dt);
+      d.querySelector("b").textContent = (g.type === "dua" ? "🤲 " : "") + g.text; d.querySelector("small").textContent = (g.name || "ضيف") + " · " + dt.toLocaleDateString("ar-SA") + " " + t12(dt);
       d.querySelector("button").onclick = function () { save({ guestbook: (state.prefs.guestbook || []).filter(function (x) { return x.id !== g.id; }) }, "تم الحذف").then(renderGuestbook); };
       $("gbList").appendChild(d);
     });
   }
+
+  // ---------- Proverb of the day ----------
+  function proverbOfDay() { var l = (data.proverbs || []).concat(state.prefs.proverbs || []); return l.length ? l[Math.floor(Date.now() / 86400000) % l.length] : ""; }
+  function renderProverb() { $("pvToday").textContent = proverbOfDay() ? "«" + proverbOfDay() + "»" : ""; if (document.activeElement !== $("pvExtra")) $("pvExtra").value = (state.prefs.proverbs || []).join("\n"); }
+  $("pvShow").onclick = function () { var p = proverbOfDay(); if (!p) return; buzz(); api("POST", "/api/toast", { message: p, sub: "مثل اليوم", fullscreen: false }).then(function () { say("ظهر على الشاشة ✓"); }).catch(fail); };
+  $("pvSave").onclick = function () { save({ proverbs: $("pvExtra").value.split("\n").map(function (x) { return x.trim(); }).filter(Boolean) }).then(renderProverb); };
 
   // ---------- Messages ----------
   $("quickMsgs").innerHTML = QUICK.map(function (q, i) { return '<button class="chipb" data-q="' + i + '">' + q[0] + "</button>"; }).join("");
@@ -670,7 +711,7 @@
   };
   $("wtype").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setSeg($("wtype"), b.dataset.v); });
   $("saveWifi").onclick = function () { var on = $("wtype").querySelector(".on"); save({ wifi: { ssid: $("ssid").value.trim(), pass: $("wpass").value, type: on ? on.dataset.v : "WPA" } }); };
-  $("showWifi").onclick = function () { press("BLUE"); say("ظهر على التلفاز ✓"); };
+  $("showWifi").onclick = function () { press("BLUE"); say("ظهرت لوحة الضيوف على التلفاز ✓"); };
 
   // ---------- Photos ----------
   function resize(file) {
@@ -828,7 +869,7 @@
   }
   function loadState() {
     return fetch("/api/state").then(function (r) { return r.json(); }).then(function (s) {
-      state = s; fill(); renderBackgrounds(); renderTimes(); renderEvents(); renderAdhans(); renderRequests(); renderMenu(); renderGuestbook();
+      state = s; fill(); renderBackgrounds(); renderTimes(); renderEvents(); renderAdhans(); renderRequests(); renderMenu(); renderGuestbook(); renderDz(); renderProverb();
     }).catch(function () { $("hDot").className = "dot off"; $("hNow").textContent = "غير متصل بالتلفاز"; });
   }
   function loadAll() {
