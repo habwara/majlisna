@@ -25,7 +25,7 @@
     welcome: "حبابكم عشرة", welcomeSub: "حياكم الله في داركم",
     city: "riyadh", theme: "nile", ambientMin: 10, takeover: true, rotate: 0, bg: 0, size: "large",
     guestName: "", menu: [], menuNote: "", services: { wc: "", prayerRoom: "", note: "" },
-    guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true, wifiQrOnly: false, adhkarOpen: "", adhkarIndex: 0, proverbs: [], ramadanMode: true, fridayReminder: true,
+    guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true, wifiQrOnly: false, adhkarOpen: "", adhkarIndex: 0, proverbs: [], ramadanMode: true, fridayReminder: true, quiz: { on: false, i: 0, reveal: false, scores: {} }, kids: { app: "", until: 0 }, cmd: null, netAlerts: true,
     hidden: [], order: [], hiddenBg: [],
     wifi: { ssid: "", pass: "", type: "WPA" }, events: [],
     alertOverlay: true, chime: true, tvToast: true, remind: 10, radio: "", ramadanDays: [], sleepMin: 60,
@@ -189,7 +189,7 @@
       fridayRadioTick(d);
     }
     bigCountdown(d);
-    if (d.getMinutes() !== lastMinuteExtra) { lastMinuteExtra = d.getMinutes(); ramadanTick(d); fridayTick(d); }
+    if (d.getMinutes() !== lastMinuteExtra) { lastMinuteExtra = d.getMinutes(); ramadanTick(d); fridayTick(d); kidsTick(); }
     if (d.getDate() !== lastDay) {
       lastDay = d.getDate();
       $("dayAr").textContent = fmt("ar-SA", { weekday: "long" }, d);
@@ -717,6 +717,8 @@
     openId = id;
     if (id === "wifi") buildWifi();
     if (id === "guests") buildGuests();
+    if (id === "quiz") buildQuiz();
+    if (id === "net") buildNet(false);
     if (id === "radio") { radioFocus = Math.max(0, stationIndex(prefs.radio)); buildStations(); }
     if (id === "settings") { settings.i = 0; settings.offset = 0; get("/api/state", function (s) { if (s) status = s.status || status; buildSettings(); }); buildSettings(); }
     $(id).classList.add("show");
@@ -798,6 +800,79 @@
       '<g transform="rotate(' + deg + ' 140 140)"><path d="M140 36 L158 140 L140 128 L122 140 Z" fill="var(--gold-light)"/><path d="M140 244 L122 140 L140 152 L158 140 Z" fill="var(--panel-line)"/></g>' +
       '<circle cx="' + tx + '" cy="' + ty + '" r="9" fill="var(--gold)"/><text x="' + tx + '" y="' + (ty + 5) + '" text-anchor="middle" fill="var(--base)" font-size="12" font-family="Kufi">🕋</text><circle cx="140" cy="140" r="6" fill="var(--gold-light)"/></svg>';
   }
+  // ---------- Quiz (guests answer from their phones; the host drives it from the phone) ----------
+  var QUIZ = window.MAJLIS_QUIZ || [];
+  function buildQuiz() {
+    var qz = prefs.quiz || {}, i = qz.i || 0, q = QUIZ[i], ans = (status.quizAnswers || {})[String(i)] || {};
+    $("qzQr").innerHTML = guestUrl() ? qrSvg(guestUrl(), 5) : "";
+    if (qz.done || !q) {
+      var sc = qz.scores || {}, names = Object.keys(sc).sort(function (a, b) { return sc[b] - sc[a]; });
+      $("qzNum").textContent = ""; $("qzOpts").innerHTML = ""; $("qzHint").textContent = "";
+      $("qzQ").innerHTML = '<div class="qz-final">انتهت المسابقة' + (names.length ? '<div class="w">🏆 ' + esc(names[0]) + " · " + arDigits(sc[names[0]]) + "</div>" : "") + "</div>";
+    } else {
+      var counts = [0, 0, 0]; Object.keys(ans).forEach(function (n) { counts[ans[n]] = (counts[ans[n]] || 0) + 1; });
+      $("qzNum").textContent = "سؤال " + arDigits(i + 1) + " من " + arDigits(QUIZ.length) + " · " + q.c;
+      $("qzQ").textContent = q.q;
+      $("qzOpts").innerHTML = q.o.map(function (o, k) {
+        var cls = qz.reveal ? (k === q.a ? " right" : " wrong") : "";
+        return '<div class="qz-opt' + cls + '"><span class="k">' + "أبج"[k] + "</span>" + esc(o) + '<span class="n">' + arDigits(counts[k] || 0) + "</span></div>";
+      }).join("");
+      $("qzHint").textContent = qz.reveal ? "الإجابة الصحيحة: " + q.o[q.a] : "أجاب " + arDigits(Object.keys(ans).length) + " · بانتظار كشف الإجابة";
+    }
+    var sc2 = prefs.quiz && prefs.quiz.scores || {}, ns = Object.keys(sc2).sort(function (a, b) { return sc2[b] - sc2[a]; }).slice(0, 8);
+    $("qzScores").innerHTML = ns.length ? ns.map(function (n) { return "<div><span>" + esc(n) + "</span><b>" + arDigits(sc2[n]) + "</b></div>"; }).join("") : '<div class="net-note">لم تبدأ النتائج بعد</div>';
+  }
+  var quizCloseTimer = null;
+  function syncQuiz() {
+    var qz = prefs.quiz || {};
+    if (qz.on) { clearTimeout(quizCloseTimer); if (openId !== "quiz") { closeOverlay(); exitAmbient(); openOverlay("quiz"); } else buildQuiz(); }
+    else if (openId === "quiz") { buildQuiz(); if (qz.done) { clearTimeout(quizCloseTimer); quizCloseTimer = setTimeout(function () { if (openId === "quiz") closeOverlay(); }, 30000); } else closeOverlay(); }
+  }
+
+  // ---------- Network panel ----------
+  var netData = null, netBusy = false;
+  function buildNet(refresh) {
+    var html = "";
+    if (!Platform.hasHelper) { $("netBody").innerHTML = '<div class="net-note">غير متاح بدون خدمة الخلفية</div>'; return; }
+    if (!netData || refresh) { get("/api/net" + (refresh ? "?sweep=1" : ""), function (n) { netData = n || netData; if (openId === "net") buildNet(false); }); }
+    var n = netData || {};
+    html += '<div class="net-grid">';
+    html += '<div class="net-tile"><div class="l">عنوان التلفزيون</div><div class="v" style="font-size:30px">' + esc(n.ip || "…") + "</div></div>";
+    html += '<div class="net-tile"><div class="l">سرعة الوصلة · Wi-Fi</div><div class="v">' + (n.linkSpeed > 0 ? n.linkSpeed + " <small>Mbps</small>" : "…") + "</div></div>";
+    html += '<div class="net-tile"><div class="l">قوة الإشارة</div><div class="v">' + (n.rssi ? n.rssi + " <small>dBm</small>" : "…") + "</div></div>";
+    html += '<div class="net-tile"><div class="l">البوابة</div><div class="v" style="font-size:30px">' + esc(n.gateway || "…") + "</div></div>";
+    html += '<div class="net-tile"><div class="l">الأجهزة المتصلة</div><div class="v">' + (n.devices ? n.devices.length : "…") + "</div></div>";
+    html += '<div class="net-tile"><div class="l">سرعة الإنترنت</div><div class="v" id="netSpeed">' + (netBusy ? "جارٍ القياس…" : (n.mbps ? n.mbps + " <small>Mbps</small>" : "موافق للقياس")) + "</div></div>";
+    html += "</div>";
+    if (n.devices && n.devices.length) html += '<div class="net-list">' + n.devices.map(esc).join("<br>") + "</div>";
+    html += '<div class="net-note">' + (n.sweepAt ? "آخر فحص للأجهزة " + time12(new Date(n.sweepAt)) + " " + ampm(new Date(n.sweepAt)) : "لم يُفحص بعد") + "</div>";
+    $("netBody").innerHTML = html;
+  }
+  function netKey(k) {
+    if (k === 13 && !netBusy) { netBusy = true; buildNet(false); get("/api/net/speed", function (r) { netBusy = false; if (r && r.mbps) { netData = netData || {}; netData.mbps = r.mbps; } if (openId === "net") buildNet(false); }); }
+    else if (k === 37 || k === 39) { buildNet(true); toast("جارٍ فحص الشبكة (نصف دقيقة)"); setTimeout(function () { if (openId === "net") buildNet(false); }, 30000); }
+  }
+
+  // ---------- Kids mode badge ----------
+  function kidsTick() {
+    var kd = prefs.kids || {}, on = kd.until && kd.until > Date.now();
+    var b = $("kidsBadge"); b.style.display = on ? "block" : "none"; b.style.top = prefs.guestMode ? "64px" : "24px";
+    if (on) b.textContent = "وضع الأطفال حتى " + time12(new Date(kd.until)) + " " + ampm(new Date(kd.until));
+  }
+
+  // ---------- Commands typed on the phone ----------
+  var lastCmdAt = 0;
+  function runCommand(c) {
+    if (!c || !c.at || c.at <= lastCmdAt) return;
+    lastCmdAt = c.at;
+    if (c.type === "radio") { var si = stationIndex(c.arg); if (si >= 0) { if (radioPlaying !== c.arg) playStation(STATIONS[si]); } }
+    else if (c.type === "stop") stopRadio();
+    else if (c.type === "ambient") enterAmbient();
+    else if (c.type === "bg") changeBackground(1);
+    else if (c.type === "guests") { closeOverlay(); openOverlay("guests"); }
+    else if (c.type === "home") { closeOverlay(); exitAmbient(); }
+  }
+
   // ---------- Adhkar panel: one dhikr at a time, up/down to move, left/right for morning/evening ----------
   var dz = { set: "m", i: 0 };
   function dzList() { return (dz.set === "e" ? window.MAJLIS_ADHKAR_EVENING : window.MAJLIS_ADHKAR_MORNING) || []; }
@@ -895,6 +970,7 @@
     lastRequestId = g.id;
     if (g.type === "request") showQuiet("طلب من الضيوف: " + g.text, g.name ? "من " + g.name : "");
     else if (g.type === "note") showMessageCard({ id: g.id, text: g.text, sub: g.name ? "تحية من " + g.name : "تحية من ضيوفنا" });
+    else if (g.type === "device") showQuiet("جهاز جديد على الشبكة", g.text);
     else if (g.type === "dua") showMessageCard({ id: g.id, text: "🤲 " + g.text, sub: g.name ? "دعاء من " + g.name : "دعاء من ضيوفنا" });
   }
 
@@ -1004,6 +1080,10 @@
     if (prefs.guestName) row("", '<div class="set-main">الضيف الحالي: ' + esc(prefs.guestName) + '<div class="set-sub">موافق: انتهت الزيارة</div></div><div class="set-val">إنهاء</div>', function (k) {
       if (k === 13) { prefs.guestName = ""; savePrefs(["guestName"]); applyTexts(); return true; }
     });
+
+    head("الشبكة");
+    row("", '<div class="set-main">حالة الشبكة<div class="set-sub">السرعة والأجهزة المتصلة</div></div><div class="set-val">فتح</div>', function (k) { if (k === 13) { closeOverlay(); openOverlay("net"); } });
+    toggle("تنبيه عند دخول جهاز جديد للشبكة", "شريط هادئ على الشاشة", "netAlerts");
 
     head("الصلاة");
     chooser("المدينة", "لمواقيت الصلاة والطقس", city().ar, function (s) {
@@ -1231,6 +1311,7 @@
       if (openId === "radio") radioKey(k);
       else if (openId === "settings") settingsKey(k);
       else if (openId === "adhkar") adhkarKey(k);
+      else if (openId === "net") netKey(k);
       else if (k === 13) closeOverlay();
       return;
     }
@@ -1279,6 +1360,7 @@
     if (!!prefs.reception !== receptionOn) { if (prefs.reception) enterReception(); else exitReception(); }
     if (prefs.adhkarOpen && (openId !== "adhkar" || dz.set !== prefs.adhkarOpen || dz.i !== prefs.adhkarIndex)) openAdhkar(prefs.adhkarOpen, prefs.adhkarIndex || 0, false);
     else if (!prefs.adhkarOpen && openId === "adhkar") closeOverlay();
+    syncQuiz(); kidsTick(); runCommand(prefs.cmd);
     bgShown = "";
     showBackground(visibleBg(Math.min(prefs.bg, backgrounds.length - 1), 1));
     if (openId === "wifi") buildWifi();
@@ -1346,6 +1428,8 @@
   }
   if (location.hash === "#settings-demo") { status = { ip: "192.168.1.40", port: 8090, pin: "2580" }; openOverlay("settings"); }
   if (location.hash === "#wifi-demo") { prefs.wifi = { ssid: "Majlis-Guest", pass: "welcome1448", type: "WPA" }; openOverlay("wifi"); }
+  if (location.hash === "#quiz-demo") { status = { ip: "192.168.1.40", port: 8090, quizAnswers: { "0": { "أبو أحمد": 1, "أم خالد": 0, "سارة": 1 } } }; prefs.quiz = { on: true, i: 0, reveal: true, scores: { "أبو أحمد": 3, "سارة": 2, "أم خالد": 1 } }; openOverlay("quiz"); }
+  if (location.hash === "#net-demo") { netData = { ip: "192.168.1.40", linkSpeed: 866, rssi: -48, gateway: "192.168.1.1", devices: ["192.168.1.1", "192.168.1.12", "192.168.1.23", "192.168.1.40", "192.168.1.57"], sweepAt: Date.now(), mbps: 212.4 }; Platform.hasHelper = true; openOverlay("net"); }
   if (location.hash === "#ramadan-demo") { prefs.ramadanMode = true; ramadanInfo = function () { return { day: 23, night: 23, oddNight: true }; }; renderOccasions(); bigCountdown(new Date()); }
   if (location.hash === "#adhkar-demo") openAdhkar("m", 0, false);
   if (location.hash === "#menu-demo") { status = { ip: "192.168.1.40", port: 8090 }; prefs.menu = ["قهوة سودانية", "شاي بالنعناع", "كركدي بارد", "تمر وحلويات", "عشاء الساعة ٩"]; prefs.menuNote = "تفضلوا، البيت بيتكم"; openOverlay("guests"); }
