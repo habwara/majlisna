@@ -16,6 +16,8 @@
   @font-face { font-family: "Kufi"; font-weight: 200; src: url(/assets/kufi-200.woff2) format("woff2"); font-display: swap; }
   @font-face { font-family: "Kufi"; font-weight: 400; src: url(/assets/kufi-400.woff2) format("woff2"); font-display: swap; }
   @font-face { font-family: "Kufi"; font-weight: 600; src: url(/assets/kufi-600.woff2) format("woff2"); font-display: swap; }
+  @font-face { font-family: "Inter"; font-weight: 400; src: url(/assets/inter-400.woff2) format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 600; src: url(/assets/inter-600.woff2) format("woff2"); }
   :root {
     --bg: #110904; --bg2: #1b0f07; --card: rgba(255, 236, 200, .045); --card-b: rgba(232, 196, 128, .16);
     --gold: #dfb86c; --gold-l: #f5dfaa; --gold-d: #9b7333; --cream: #f7efe1; --muted: rgba(247, 239, 225, .56);
@@ -23,7 +25,7 @@
     --safe-b: env(safe-area-inset-bottom); --safe-t: env(safe-area-inset-top);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; background: var(--bg); color: var(--cream); font: 400 15.5px/1.55 "Kufi", -apple-system, "SF Arabic", "Noto Sans Arabic", sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+  html, body { margin: 0; background: var(--bg); color: var(--cream); font: 400 15.5px/1.55 "Kufi", "Inter", -apple-system, "SF Arabic", "Noto Sans Arabic", sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
   body { min-height: 100vh; padding: calc(var(--safe-t) + 4px) 0 calc(96px + var(--safe-b)); background:
     radial-gradient(140% 55% at 50% -10%, #4a2b13 0%, rgba(74, 43, 19, 0) 60%),
     radial-gradient(80% 40% at 100% 100%, rgba(120, 80, 30, .18), transparent 70%), var(--bg); background-attachment: fixed; }
@@ -263,6 +265,19 @@
       <button class="key" data-vol="up"><svg class="i"><use href="#i-plus"/></svg></button>
       <button class="key" data-act="mute"><svg class="i"><use href="#i-mute"/></svg></button>
     </div>
+    <div class="ttl">اكتب أمراً</div>
+    <div class="card">
+      <div class="row" style="align-items:flex-end"><input id="cmdText" type="text" placeholder="مثل: شغل الحصري · افتح يوتيوب · ارفع الصوت" autocomplete="off"><button class="btn" id="cmdGo" style="flex:0 0 84px;margin-top:0">نفّذ</button></div>
+      <p style="margin-top:8px" id="cmdHelp">يفهم: شغل/أوقف الإذاعة أو اسم قارئ · افتح (اسم تطبيق) · ارفع/خفّض/اكتم الصوت · وضع الهدوء · الضيوف · أذكار الصباح/المساء · غيّر الخلفية · الرئيسية · قول (رسالة)</p>
+    </div>
+    <div class="ttl">وضع الأطفال</div>
+    <div class="card">
+      <p>يفتح التطبيق المختار، وعند انتهاء الوقت يرجع التلفزيون لمجلسنا وحده</p>
+      <select id="kidsApp"></select>
+      <div class="seg" id="kidsMin" style="margin-top:10px"><button data-v="15">١٥ د</button><button data-v="30" class="on">٣٠ د</button><button data-v="45">٤٥ د</button><button data-v="60">ساعة</button><button data-v="90">ساعة ونصف</button></div>
+      <div class="row"><button class="btn" id="kidsStart">ابدأ</button><button class="btn ghost" id="kidsStop">أنهِ الآن</button></div>
+      <div id="kidsState" style="text-align:center;color:var(--muted);font-size:12.5px;margin-top:8px"></div>
+    </div>
     <div class="ttl">افتح تطبيق</div>
     <div class="card"><div class="apps" id="quickApps"></div></div>
     <button class="btn danger" data-act="power"><svg class="i"><use href="#i-power"/></svg>إطفاء التلفاز</button>
@@ -312,6 +327,13 @@
     <div id="reqWrap" style="display:none"><div class="ttl">طلبات الضيوف</div>
     <div class="card"><div id="reqList"></div><button class="btn ghost" id="reqClear">تم الكل</button></div></div>
 
+    <div class="ttl">مسابقة المجلس</div>
+    <div class="card">
+      <p>الأسئلة على الشاشة، والضيوف يجيبون من صفحة الضيف، والنتيجة فورية</p>
+      <div id="qzState" style="text-align:center;color:var(--gold-l);font-size:15px;line-height:1.6;min-height:24px;margin-bottom:8px"></div>
+      <div class="row"><button class="btn" id="qzStart">ابدأ المسابقة</button><button class="btn ghost" id="qzReveal">اكشف الإجابة</button></div>
+      <div class="row"><button class="btn ghost" id="qzNext">السؤال التالي</button><button class="btn danger" id="qzEnd">إنهاء وعرض النتائج</button></div>
+    </div>
     <div class="ttl">ترحيب باسم الضيف</div>
     <div class="card">
       <p>تظهر بطاقة ترحيب بملء الشاشة باسمه، ويبقى اسمه تحت الترحيب حتى تنهي الزيارة</p>
@@ -431,6 +453,12 @@
       <p style="margin-top:10px">التطبيقات: ▲▼ ترتيب · 👁 إخفاء · 🔒 خاص (يختفي في وضع الضيوف). على التلفاز: «ترتيب» في الشريط أو اضغط مطوّلاً على التطبيق.</p>
       <div id="sleepBox"><label class="f">إطفاء تلقائي لحفظ الطاقة</label>
       <div class="seg" data-seg="sleepMin" data-num="1"><button data-v="0">متوقف</button><button data-v="15">١٥ د</button><button data-v="30">٣٠ د</button><button data-v="60">ساعة</button><button data-v="240">٤ ساعات</button></div></div>
+    </div>
+    <div class="ttl">الشبكة</div>
+    <div class="card">
+      <div id="netInfo" style="font-size:14px;line-height:1.9;color:var(--cream)"></div>
+      <div class="row"><button class="btn ghost" id="netSpeed">قياس سرعة الإنترنت</button><button class="btn ghost" id="netSweep">فحص الأجهزة</button></div>
+      <div class="sw"><div class="t">تنبيه عند دخول جهاز جديد<small>شريط هادئ على الشاشة</small></div><label class="tog"><input type="checkbox" data-pref="netAlerts"><i></i></label></div>
     </div>
     <div class="ttl">التطبيقات على الشاشة</div>
     <div class="card"><div id="appList"></div></div>
@@ -675,6 +703,72 @@
     });
   }
 
+  // ---------- Quiz control ----------
+  function qzSave(o) { var q = Object.assign({ on: false, i: 0, reveal: false, scores: {} }, state.prefs.quiz || {}, o); return save({ quiz: q }, false).then(renderQuiz); }
+  function renderQuiz() {
+    var q = state.prefs.quiz || {}, list = data.quiz || [], ans = ((state.status || {}).quizAnswers || {})[String(q.i || 0)] || {};
+    $("qzState").textContent = q.on ? "سؤال " + arD((q.i || 0) + 1) + " من " + arD(list.length) + " · أجاب " + arD(Object.keys(ans).length) + (q.reveal ? " · الإجابة مكشوفة" : "") : (q.done ? "انتهت المسابقة" : "لم تبدأ");
+  }
+  $("qzStart").onclick = function () { buzz(); qzSave({ on: true, i: 0, reveal: false, done: false, scores: {}, reset: true }).then(function () { say("بدأت على الشاشة ✓"); }); };
+  $("qzReveal").onclick = function () {
+    var q = state.prefs.quiz || {}; if (!q.on || q.reveal) return; buzz();
+    var ans = ((state.status || {}).quizAnswers || {})[String(q.i || 0)] || {}, right = (data.quiz || [])[q.i] ? data.quiz[q.i].a : -1, sc = Object.assign({}, q.scores || {});
+    Object.keys(ans).forEach(function (n) { if (ans[n] === right) sc[n] = (sc[n] || 0) + 1; });
+    qzSave({ reveal: true, scores: sc });
+  };
+  $("qzNext").onclick = function () { var q = state.prefs.quiz || {}; if (!q.on) return; buzz(); if ((q.i || 0) + 1 >= (data.quiz || []).length) { $("qzEnd").onclick(); return; } qzSave({ i: (q.i || 0) + 1, reveal: false }); };
+  $("qzEnd").onclick = function () { buzz(); qzSave({ on: false, done: true, reveal: false }).then(function () { say("النتائج على الشاشة"); }); };
+
+  // ---------- Kids mode ----------
+  function renderKids() {
+    var k = state.prefs.kids || {}, on = k.until && k.until > Date.now();
+    $("kidsState").textContent = on ? "شغّال حتى " + t12(new Date(k.until)) : "متوقف";
+    if ($("kidsApp").options.length === 0 && apps.length) {
+      $("kidsApp").innerHTML = apps.map(function (a) { return '<option value="' + a.id + '">' + a.title + "</option>"; }).join("");
+      var prefId = (apps.filter(function (a) { return /kids/i.test(a.id) || /kids|أطفال/i.test(a.title); })[0] || {}).id; if (prefId) $("kidsApp").value = prefId;
+    }
+  }
+  $("kidsMin").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) setSeg($("kidsMin"), b.dataset.v); });
+  $("kidsStart").onclick = function () { var mb = $("kidsMin").querySelector(".on"), m = mb ? +mb.dataset.v : 30, app = $("kidsApp").value; if (!app) { say("اختر تطبيقاً", true); return; } buzz(); save({ kids: { app: app, until: Date.now() + m * 60000 } }, "بدأ وضع الأطفال ✓").then(renderKids); };
+  $("kidsStop").onclick = function () { buzz(); save({ kids: { app: "", until: 0 } }, "انتهى").then(function () { api("POST", "/api/home").catch(function () {}); renderKids(); }); };
+
+  // ---------- Typed commands ----------
+  function norm(s) { return String(s || "").replace(/[\u064B-\u0652]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").toLowerCase().trim(); }
+  function cmd(type, arg) { return save({ cmd: { type: type, arg: arg || "", at: Date.now() } }, false); }
+  function runText(t) {
+    var s = norm(t); if (!s) return;
+    var has = function (w) { return s.indexOf(norm(w)) !== -1; };
+    if (/^(قول|قل|رساله|اكتب)\s/.test(s)) { api("POST", "/api/toast", { message: t.replace(/^\S+\s/, ""), sub: "", fullscreen: false }).then(function () { say("وصلت الرسالة ✓"); }).catch(fail); return; }
+    if (has("ارفع") && has("صوت")) { api("POST", "/api/volume?action=up").then(refreshVolume).catch(fail); say("ارتفع الصوت"); return; }
+    if ((has("خفض") || has("نزل") || has("وطي")) && has("صوت")) { api("POST", "/api/volume?action=down").then(refreshVolume).catch(fail); say("انخفض الصوت"); return; }
+    if (has("اكتم") || has("كتم") || has("سكت")) { api("POST", "/api/volume?action=mute&on=1").catch(fail); say("تم الكتم"); return; }
+    if (has("رجع الصوت") || has("فك الكتم")) { api("POST", "/api/volume?action=mute&on=0").catch(fail); say("رجع الصوت"); return; }
+    if ((has("وقف") || has("اوقف") || has("اطفي") || has("سكر")) && (has("اذاعه") || has("قران") || has("الراديو") || has("التلاوه"))) { cmd("stop"); say("توقفت الإذاعة"); return; }
+    if (has("هدوء")) { cmd("ambient"); say("وضع الهدوء"); return; }
+    if (has("استقبال")) { save({ reception: !(has("انهي") || has("انتهى") || has("وقف")) }); say("تم"); return; }
+    if (has("ضيوف") || has("قبله") || has("واي فاي") || has("وايفاي")) { cmd("guests"); say("لوحة الضيوف"); return; }
+    if (has("اذكار")) { save({ adhkarOpen: has("مساء") ? "e" : "m", adhkarIndex: 0 }); say("الأذكار على الشاشة"); return; }
+    if (has("خلفيه")) { cmd("bg"); say("تغيرت الخلفية"); return; }
+    if (has("رئيسيه") || s === "مجلسنا" || has("ارجع")) { api("POST", "/api/home").catch(fail); cmd("home"); say("شاشة مجلسنا"); return; }
+    var st = (data.stations || []).filter(function (x) { return has(x.ar) || has(x.ar.split(" ").pop()); })[0];
+    if (st) { cmd("radio", st.id); say("تشغيل " + st.ar); return; }
+    var ap = apps.filter(function (a) { return has(a.title) || has(a.id.split(".").pop()); })[0];
+    if (ap) { api("POST", "/api/launch?id=" + encodeURIComponent(ap.id)).then(function () { say("فتح " + ap.title); }).catch(fail); return; }
+    say("ما فهمت الأمر", true);
+  }
+  $("cmdGo").onclick = function () { buzz(); runText($("cmdText").value); $("cmdText").value = ""; };
+  $("cmdText").addEventListener("keydown", function (e) { if (e.key === "Enter") $("cmdGo").onclick(); });
+
+  // ---------- Network ----------
+  function renderNet(n) {
+    if (!n) return;
+    $("netInfo").innerHTML = "عنوان التلفزيون: <b dir=ltr>" + (n.ip || "…") + "</b><br>سرعة الوصلة: <b dir=ltr>" + (n.linkSpeed > 0 ? n.linkSpeed + " Mbps" : "…") + "</b> · الإشارة: <b dir=ltr>" + (n.rssi || "…") + " dBm</b><br>الأجهزة المتصلة: <b>" + arD((n.devices || []).length) + "</b>" + (n.mbps ? "<br>سرعة الإنترنت: <b dir=ltr>" + n.mbps + " Mbps</b>" : "");
+  }
+  var netCache = null;
+  function loadNet(sweep) { return api("GET", "/api/net" + (sweep ? "?sweep=1" : "")).then(function (n) { netCache = Object.assign(netCache || {}, n); renderNet(netCache); }).catch(function () {}); }
+  $("netSpeed").onclick = function () { buzz(); say("جارٍ القياس (حتى ١٥ ثانية)…"); api("GET", "/api/net/speed").then(function (r) { if (r.mbps) { netCache = Object.assign(netCache || {}, { mbps: r.mbps }); renderNet(netCache); say(r.mbps + " Mbps"); } else say(r.error || "تعذر", true); }).catch(fail); };
+  $("netSweep").onclick = function () { buzz(); say("جارٍ الفحص (نصف دقيقة)…"); loadNet(true).then(function () { setTimeout(function () { loadNet(false); }, 32000); }); };
+
   // ---------- Proverb of the day ----------
   function proverbOfDay() { var l = (data.proverbs || []).concat(state.prefs.proverbs || []); return l.length ? l[Math.floor(Date.now() / 86400000) % l.length] : ""; }
   function renderProverb() { $("pvToday").textContent = proverbOfDay() ? "«" + proverbOfDay() + "»" : ""; if (document.activeElement !== $("pvExtra")) $("pvExtra").value = (state.prefs.proverbs || []).join("\n"); }
@@ -869,7 +963,7 @@
   }
   function loadState() {
     return fetch("/api/state").then(function (r) { return r.json(); }).then(function (s) {
-      state = s; fill(); renderBackgrounds(); renderTimes(); renderEvents(); renderAdhans(); renderRequests(); renderMenu(); renderGuestbook(); renderDz(); renderProverb();
+      state = s; fill(); renderBackgrounds(); renderTimes(); renderEvents(); renderAdhans(); renderRequests(); renderMenu(); renderGuestbook(); renderDz(); renderProverb(); renderQuiz(); renderKids();
     }).catch(function () { $("hDot").className = "dot off"; $("hNow").textContent = "غير متصل بالتلفاز"; });
   }
   function loadAll() {
@@ -882,9 +976,9 @@
         var titles = {}, seen = {}; apps = [];
         (data.baseApps || []).forEach(function (b) { titles[b.id] = b.title; });
         (a.apps || []).forEach(function (x) { if (!seen[x.id]) { seen[x.id] = 1; apps.push({ id: x.id, title: titles[x.id] || x.title }); } });
-        renderApps();
+        renderApps(); renderKids();
       });
-    }).then(refreshVolume);
+    }).then(refreshVolume).then(function () { loadNet(false); });
   }
   if (!PIN) showLogin();
   else fetch("/api/check?pin=" + encodeURIComponent(PIN)).then(function (r) { if (r.ok) loadAll(); else showLogin(); }).catch(function () { loadAll(); });

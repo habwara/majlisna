@@ -47,7 +47,7 @@ var DEFAULTS = {
   city: "riyadh", theme: "nile", ambientMin: 10, takeover: true, rotate: 0, bg: 0, size: "large",
   hidden: [], order: [], hiddenBg: [],
   guestName: "", menu: [], menuNote: "", services: { wc: "", prayerRoom: "", note: "" },
-  guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true, wifiQrOnly: false, adhkarOpen: "", adhkarIndex: 0, proverbs: [], ramadanMode: true, fridayReminder: true,
+  guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true, wifiQrOnly: false, adhkarOpen: "", adhkarIndex: 0, proverbs: [], ramadanMode: true, fridayReminder: true, quiz: { on: false, i: 0, reveal: false }, kids: { app: "", until: 0 }, cmd: null, netAlerts: true,
   wifi: { ssid: "", pass: "", type: "WPA" }, events: [],
   alertOverlay: true, chime: true, tvToast: true, remind: 10, radio: "",
   ramadanDays: [], // filled in by the home app, which has the Umm al-Qura calendar
@@ -314,7 +314,19 @@ function finishAdhan() {
 // Over other apps: a notification, and (if asked) switch to the majlis screen to show it.
 var message = null;
 // Guest page: the last request or greeting, and the open hospitality requests.
-var guest = null, requests = [], lastGuestAt = 0;
+var guest = null, requests = [], lastGuestAt = 0, quizAnswers = {}, kidsTimer = null;
+function quizForGuest() {
+  var qz = prefs.quiz; if (!qz || !qz.on) return { on: false };
+  var list = STATIC.quiz || [], q = list[qz.i];
+  return { on: true, i: qz.i, reveal: !!qz.reveal, total: list.length, q: q ? q.q : "", o: q ? q.o : [], a: qz.reveal && q ? q.a : -1 };
+}
+function kidsApply(k) {
+  clearTimeout(kidsTimer);
+  var left = k && k.until ? k.until - Date.now() : 0;
+  if (!k || !k.app || left <= 0) return;
+  launch(k.app);
+  kidsTimer = setTimeout(function () { prefs.kids = { app: "", until: 0 }; savePrefs(); toast("انتهى وقت الأطفال، حياكم الله في مجلسنا"); launch(APP_ID); }, left);
+}
 function showMessage(m, fullscreen) {
   message = { id: Date.now(), text: String(m.text || "").slice(0, 160), sub: String(m.sub || "").slice(0, 200), kind: m.kind || "message", at: Date.now() };
   if (foreground === APP_ID) { pushEvent({ event: "message", message: message }); return; }
@@ -398,7 +410,7 @@ function statusInfo(local) {
   return {
     version: VERSION, ip: myIp(), port: PORT, pin: local ? prefs.pin : undefined, ssap: ssap.state, foreground: foreground,
     apps: Object.keys(launchPoints).length, power: power, sleep: sleepInfo(), devmode: devmode,
-    alertNow: alertNow, message: message, guest: guest, requests: requests, nowApp: nowApp(), heartbeat: heartbeat.state, prayers: upcomingPrayers().slice(0, 6), log: log.slice(-30)
+    alertNow: alertNow, message: message, guest: guest, requests: requests, quizAnswers: quizAnswers, nowApp: nowApp(), heartbeat: heartbeat.state, prayers: upcomingPrayers().slice(0, 6), log: log.slice(-30)
   };
 }
 
@@ -424,12 +436,18 @@ http.createServer(function (req, res) {
   if (p === "/manifest.json") return send(res, 200, MANIFEST, "application/manifest+json");
   if (p === "/guest" || p === "/guest/") return send(res, 200, GUEST_PAGE, "text/html; charset=utf-8");
   // The guest page needs no PIN: it only sees the hospitality menu and can send a request or a greeting.
-  if (p === "/api/guest" && req.method === "GET") return send(res, 200, { majlisName: prefs.majlisName, welcome: prefs.welcome, menu: prefs.menu || [], menuNote: prefs.menuNote || "", wifi: prefs.wifiQrOnly ? {} : (prefs.wifi || {}), services: prefs.services || {} });
+  if (p === "/api/guest" && req.method === "GET") return send(res, 200, { majlisName: prefs.majlisName, welcome: prefs.welcome, menu: prefs.menu || [], menuNote: prefs.menuNote || "", wifi: prefs.wifiQrOnly ? {} : (prefs.wifi || {}), services: prefs.services || {}, quiz: quizForGuest() });
   if (p === "/api/guest" && req.method === "POST") {
     return jsonBody(req, function (v) {
       var now = Date.now();
       if (now - lastGuestAt < 4000) return send(res, 429, { error: "انتظر لحظة ثم أعد المحاولة" });
       var type = v.type, text = String(v.text || "").trim().slice(0, 120), name = String(v.name || "").trim().slice(0, 40);
+      if (type === "answer") {
+        var qz = prefs.quiz; if (!qz || !qz.on || qz.reveal) return send(res, 400, { error: "انتهى وقت الإجابة" });
+        (quizAnswers[qz.i] = quizAnswers[qz.i] || {})[name || "ضيف"] = parseInt(text, 10) || 0;
+        rev++; pushEvent({ event: "state", rev: rev });
+        return send(res, 200, { ok: true });
+      }
       if (!text || (type !== "request" && type !== "note" && type !== "dua")) return send(res, 400, { error: "بيانات ناقصة" });
       lastGuestAt = now;
       guest = { id: now, type: type, text: text, name: name, at: now };
@@ -487,6 +505,8 @@ http.createServer(function (req, res) {
   if (p === "/api/prefs" && req.method === "POST") {
     return jsonBody(req, function (v) {
       var replan = false;
+      if (v.quiz !== undefined && (!v.quiz || !v.quiz.on || v.quiz.reset)) quizAnswers = {};
+      if (v.kids !== undefined) kidsApply(v.kids);
       Object.keys(v).forEach(function (k) {
         if (EDITABLE.indexOf(k) === -1) return;
         if (["city", "remind", "tvToast", "ramadanDays", "friday"].indexOf(k) !== -1 && JSON.stringify(prefs[k]) !== JSON.stringify(v[k])) replan = true;
@@ -524,6 +544,17 @@ http.createServer(function (req, res) {
     return request(uri, a === "mute" ? { mute: q.on !== "0" } : {}, function (m) { send(res, 200, m.payload || {}); });
   }
   if (p === "/api/launch") { launch(String(q.id || ""), function (ok) { send(res, ok ? 200 : 500, { ok: ok }); }); return; }
+  if (p === "/api/net") { var ifs = os.networkInterfaces(), ip4 = myIp(); return send(res, 200, { ip: ip4, linkSpeed: -1, rssi: 0, gateway: "", dns: "", devices: [], sweepAt: 0 }); }
+  if (p === "/api/net/speed") {
+    var t0 = Date.now(), total = 0, done = false;
+    var rq = https.get("https://speed.cloudflare.com/__down?bytes=15000000", function (rs) {
+      rs.on("data", function (c) { total += c.length; if (Date.now() - t0 > 12000 && !done) { done = true; rs.destroy(); } });
+      rs.on("end", fin); rs.on("close", fin);
+    });
+    rq.on("error", function () { if (!done) { done = true; send(res, 200, { error: "تعذر القياس" }); } });
+    function fin() { if (done === "sent") return; done = "sent"; var s = (Date.now() - t0) / 1000; send(res, 200, total > 200000 ? { mbps: Math.round(total * 8 / s / 1e6 * 10) / 10, bytes: total, secs: Math.round(s * 10) / 10 } : { error: "تعذر القياس" }); }
+    return;
+  }
   if (p === "/api/requests" && req.method === "GET") return send(res, 200, requests);
   if (p === "/api/requests/clear") { var rid = q.id ? +q.id : 0; requests = rid ? requests.filter(function (x) { return x.id !== rid; }) : []; return send(res, 200, { ok: true }); }
   if (p === "/api/home") { launch(APP_ID, function (ok) { send(res, ok ? 200 : 500, { ok: ok }); }); return; }

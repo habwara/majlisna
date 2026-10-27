@@ -9,9 +9,13 @@
   @font-face { font-family: "Kufi"; font-weight: 200; src: url(/assets/kufi-200.woff2) format("woff2"); }
   @font-face { font-family: "Kufi"; font-weight: 400; src: url(/assets/kufi-400.woff2) format("woff2"); }
   @font-face { font-family: "Kufi"; font-weight: 600; src: url(/assets/kufi-600.woff2) format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 400; src: url(/assets/inter-400.woff2) format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 600; src: url(/assets/inter-600.woff2) format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 400; src: url(/assets/inter-400.woff2) format("woff2"); }
+  @font-face { font-family: "Inter"; font-weight: 600; src: url(/assets/inter-600.woff2) format("woff2"); }
   :root { --bg: #0b1020; --bg2: #141c36; --card: rgba(255, 236, 200, .05); --card-b: rgba(232, 196, 128, .16); --gold: #dcb56a; --gold-l: #f2dba3; --cream: #f4efe4; --muted: rgba(244, 239, 228, .62); --ok: #7fd3a1; --danger: #ec8b74; --safe-t: env(safe-area-inset-top, 0px); --safe-b: env(safe-area-inset-bottom, 0px); }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; background: radial-gradient(130% 70% at 50% 0%, #26355f, var(--bg) 60%); color: var(--cream); font-family: "Kufi", system-ui, sans-serif; min-height: 100%; }
+  html, body { margin: 0; background: radial-gradient(130% 70% at 50% 0%, #26355f, var(--bg) 60%); color: var(--cream); font-family: "Kufi", "Inter", "Inter", system-ui, sans-serif; min-height: 100%; }
   body { padding: calc(14px + var(--safe-t)) 16px calc(40px + var(--safe-b)); max-width: 560px; margin: 0 auto; }
   header { text-align: center; padding: 20px 0 10px; }
   header img { width: 86px; height: 86px; border-radius: 24px; box-shadow: 0 14px 36px rgba(0, 0, 0, .55); }
@@ -53,6 +57,16 @@
 
 <div class="ttl">اسمك (اختياري)</div>
 <div class="card"><input id="guest" type="text" maxlength="40" placeholder="مثل: أبو أحمد"></div>
+
+<div id="qzWrap" style="display:none">
+  <div class="ttl">مسابقة المجلس</div>
+  <div class="card">
+    <div id="qzNum" style="color:var(--gold);font-size:13px;margin-bottom:6px"></div>
+    <div id="qzQ" style="font-size:19px;line-height:1.6;margin-bottom:12px"></div>
+    <div class="menu" id="qzOpts" style="grid-template-columns:1fr"></div>
+    <p id="qzMsg" style="margin:10px 0 0;text-align:center"></p>
+  </div>
+</div>
 
 <div class="ttl">الضيافة · اضغط على ما تحب ويصل الطلب لأهل البيت بهدوء</div>
 <div class="card">
@@ -102,8 +116,27 @@
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "صار خطأ"); done(); }); })
       .catch(function (e) { say(e.message, true); });
   }
+  // ---------- Quiz ----------
+  var answered = {}, quizKey = "";
+  function renderQuiz(qz) {
+    var w = $("qzWrap");
+    if (!qz || !qz.on) { w.style.display = "none"; return; }
+    w.style.display = "";
+    var key = qz.i + ":" + qz.reveal; var mine = answered[qz.i];
+    $("qzNum").textContent = "سؤال " + (qz.i + 1) + " من " + qz.total;
+    $("qzQ").textContent = qz.q;
+    if (key !== quizKey) {
+      quizKey = key;
+      $("qzOpts").innerHTML = (qz.o || []).map(function (o, k) { return '<button class="mi' + (qz.reveal ? (k === qz.a ? " sent" : "") : (mine === k ? " sent" : "")) + '" data-k="' + k + '"><i>' + "أبج"[k] + "</i><span></span></button>"; }).join("");
+      Array.prototype.forEach.call($("qzOpts").children, function (b, k) { b.querySelector("span").textContent = qz.o[k]; b.onclick = function () { if (qz.reveal) return; buzz(); send("answer", String(k), function () { answered[qz.i] = k; say("وصلت إجابتك ✓"); buzz(20); renderQuiz(qz); }); }; });
+    }
+    $("qzMsg").textContent = qz.reveal ? "الإجابة الصحيحة: " + (qz.o[qz.a] || "") + (mine !== undefined ? (mine === qz.a ? " · أحسنت ✓" : " · حظاً أوفر") : "") : (mine !== undefined ? "سجّلت إجابتك، بانتظار الكشف" : "اختر إجابتك");
+  }
+  setInterval(function () { if (!document.hidden) fetch("/api/guest").then(function (r) { return r.json(); }).then(function (d) { renderQuiz(d.quiz); }).catch(function () {}); }, 3000);
+
   function load() {
     fetch("/api/guest").then(function (r) { return r.json(); }).then(function (d) {
+      renderQuiz(d.quiz);
       $("welcome").textContent = d.welcome || "حبابكم عشرة";
       $("name").textContent = d.majlisName || "مجلسنا";
       document.title = "ضيوف " + (d.majlisName || "مجلسنا");
