@@ -11,6 +11,10 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.net.wifi.WifiManager
+import java.net.InetAddress
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -44,6 +48,12 @@ class HelperService : Service() {
     private var guest: JSONObject? = null          // last guest request or note, shown quietly on the screen
     private val requests = ArrayList<JSONObject>()  // open hospitality requests from the guest page
     private var lastGuestAt = 0L
+    private val quizAnswers = HashMap<Int, HashMap<String, Int>>()   // question index -> guest name -> option
+    private var netDevices = ArrayList<String>()                     // IPs seen on the last sweep
+    private var netSweepAt = 0L
+    private var newDevice: JSONObject? = null
+    private val kidsEnd = Runnable { kidsOver() }
+    private val kidsWarn = Runnable { toast("⏳ دقيقة واحدة على نهاية وقت الأطفال") }
     private val log = ArrayList<String>()
     private val firedEvents = HashSet<String>()
 
@@ -58,7 +68,7 @@ class HelperService : Service() {
         if (!prefs.has("pin")) { prefs.put("pin", (1000 + Random.nextInt(9000)).toString()); savePrefs() }
         server = HttpServer(PORT, ::handle).also { it.start() }
         main.postDelayed(object : Runnable {
-            override fun run() { checkEvents(); prayerLoop(); main.postDelayed(this, 20_000) }
+            override fun run() { checkEvents(); prayerLoop(); if (System.currentTimeMillis() - netSweepAt > 10 * 60_000) sweepNetwork(); main.postDelayed(this, 20_000) }
         }, 20_000)
         note("helper started")
     }
@@ -101,12 +111,21 @@ class HelperService : Service() {
             p == "/api/guest" && r.method == "GET" -> return json(JSONObject()
                 .put("majlisName", prefs.optString("majlisName", "مجلسنا")).put("welcome", prefs.optString("welcome", "حبابكم عشرة"))
                 .put("menu", prefs.optJSONArray("menu") ?: JSONArray()).put("menuNote", prefs.optString("menuNote"))
-                .put("wifi", if (prefs.optBoolean("wifiQrOnly", false)) JSONObject() else (prefs.optJSONObject("wifi") ?: JSONObject())).put("services", prefs.optJSONObject("services") ?: JSONObject()))
+                .put("wifi", if (prefs.optBoolean("wifiQrOnly", false)) JSONObject() else (prefs.optJSONObject("wifi") ?: JSONObject())).put("services", prefs.optJSONObject("services") ?: JSONObject())
+                .put("quiz", quizForGuest()))
             p == "/api/guest" && r.method == "POST" -> {
                 val now = System.currentTimeMillis()
                 if (now - lastGuestAt < 4000) return json(JSONObject().put("error", "انتظر لحظة ثم أعد المحاولة"), 429)
                 val v = JSONObject(r.text())
                 val type = v.optString("type"); val text = v.optString("text").trim().take(120); val name = v.optString("name").trim().take(40)
+                if (type == "answer") {
+                    val qz = prefs.optJSONObject("quiz") ?: return json(JSONObject().put("error", "لا توجد مسابقة"), 400)
+                    if (!qz.optBoolean("on") || qz.optBoolean("reveal")) return json(JSONObject().put("error", "انتهى وقت الإجابة"), 400)
+                    val who = if (name.isEmpty()) "ضيف" else name
+                    synchronized(quizAnswers) { quizAnswers.getOrPut(qz.optInt("i")) { HashMap() }[who] = text.toIntOrNull() ?: 0 }
+                    rev++; push(JSONObject().put("event", "state").put("rev", rev))
+                    return json(JSONObject().put("ok", true))
+                }
                 if (text.isEmpty() || (type != "request" && type != "note" && type != "dua")) return json(JSONObject().put("error", "بيانات ناقصة"), 400)
                 lastGuestAt = now
                 val g = JSONObject().put("id", now).put("type", type).put("text", text).put("name", name).put("at", now)
@@ -159,6 +178,8 @@ class HelperService : Service() {
             p == "/api/prefs" && r.method == "POST" -> {
                 val v = JSONObject(r.text())
                 v.keys().forEach { k -> if (k != "pin") prefs.put(k, v.get(k)) }
+                if (v.has("quiz")) { val qz = v.optJSONObject("quiz"); if (qz == null || !qz.optBoolean("on") || qz.optBoolean("reset")) synchronized(quizAnswers) { quizAnswers.clear() } }
+                if (v.has("kids")) main.post { kidsApply(v.optJSONObject("kids")) }
                 savePrefs()
                 push(JSONObject().put("event", "state").put("rev", rev))
                 return json(JSONObject().put("ok", true).put("rev", rev))
@@ -192,6 +213,8 @@ class HelperService : Service() {
                 return json(JSONObject().put("ok", a != null))
             }
             p == "/api/home" -> { openHome(); return json(JSONObject().put("ok", true)) }
+            p == "/api/net" -> { if (r.query["sweep"] == "1") sweepNetwork(); return json(netInfo()) }
+            p == "/api/net/speed" -> return json(speedTest())
             p == "/api/requests" && r.method == "GET" -> return json(JSONArray(synchronized(requests) { requests.toList() }))
             p == "/api/requests/clear" -> {
                 val id = r.query["id"]?.toLongOrNull()
@@ -244,6 +267,8 @@ class HelperService : Service() {
             .put("nowApp", if (MainActivity.visible != null) JSONObject().put("id", packageName).put("title", "شاشة مجلسنا") else JSONObject.NULL)
             .put("prayers", next).put("alertNow", alertNow ?: JSONObject.NULL).put("message", message ?: JSONObject.NULL)
             .put("guest", guest ?: JSONObject.NULL).put("requests", JSONArray(synchronized(requests) { requests.toList() }))
+            .put("quizAnswers", synchronized(quizAnswers) { JSONObject().also { o -> quizAnswers.forEach { (i, m) -> o.put(i.toString(), JSONObject(m as Map<*, *>)) } } })
+            .put("newDevice", newDevice ?: JSONObject.NULL).put("devices", netDevices.size)
             .put("capabilities", JSONObject().put("power", false).put("sleep", false).put("lgMenu", false).put("remoteEverywhere", false))
             .put("log", JSONArray(synchronized(log) { log.toList() }))
     }
@@ -264,6 +289,76 @@ class HelperService : Service() {
 
     private fun openHome() {
         main.post { startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)) }
+    }
+
+    // ---------- Quiz ----------
+    private fun quizForGuest(): JSONObject {
+        val qz = prefs.optJSONObject("quiz") ?: return JSONObject().put("on", false)
+        if (!qz.optBoolean("on")) return JSONObject().put("on", false)
+        val i = qz.optInt("i")
+        val list = try { JSONObject(assets.open("data.json").readBytes().toString(Charsets.UTF_8)).optJSONArray("quiz") } catch (e: Exception) { null } ?: JSONArray()
+        val q = if (i in 0 until list.length()) list.getJSONObject(i) else null
+        return JSONObject().put("on", true).put("i", i).put("reveal", qz.optBoolean("reveal")).put("total", list.length())
+            .put("q", q?.optString("q") ?: "").put("o", q?.optJSONArray("o") ?: JSONArray()).put("a", if (qz.optBoolean("reveal")) q?.optInt("a") ?: -1 else -1)
+    }
+
+    // ---------- Network panel ----------
+    private fun wifi(): WifiManager? = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+    private fun netInfo(): JSONObject {
+        val w = wifi()?.connectionInfo
+        val dhcp = wifi()?.dhcpInfo
+        fun ip4(i: Int) = if (i == 0) "" else "${i and 0xff}.${i shr 8 and 0xff}.${i shr 16 and 0xff}.${i shr 24 and 0xff}"
+        return JSONObject().put("ip", ip()).put("linkSpeed", w?.linkSpeed ?: -1).put("rssi", w?.rssi ?: 0)
+            .put("gateway", ip4(dhcp?.gateway ?: 0)).put("dns", ip4(dhcp?.dns1 ?: 0))
+            .put("devices", JSONArray(netDevices)).put("sweepAt", netSweepAt)
+    }
+    private fun sweepNetwork() {
+        val mine = ip(); if (!mine.contains(".")) return
+        val base = mine.substringBeforeLast(".")
+        Thread {
+            val pool = Executors.newFixedThreadPool(32)
+            val found = java.util.Collections.synchronizedList(ArrayList<String>())
+            for (h in 1..254) pool.execute { val a = "$base.$h"; try { if (InetAddress.getByName(a).isReachable(400)) found.add(a) } catch (e: Exception) { } }
+            pool.shutdown(); pool.awaitTermination(25, TimeUnit.SECONDS)
+            found.sortBy { it.substringAfterLast(".").toIntOrNull() ?: 0 }
+            val fresh = if (netDevices.isEmpty()) emptyList() else found.filter { it !in netDevices && it != mine }
+            netDevices = ArrayList(found); netSweepAt = System.currentTimeMillis()
+            if (fresh.isNotEmpty() && prefs.optBoolean("netAlerts", true)) {
+                newDevice = JSONObject().put("id", netSweepAt).put("ip", fresh.joinToString("، ")).put("at", netSweepAt)
+                if (MainActivity.visible != null) push(JSONObject().put("event", "guest").put("guest", JSONObject().put("id", netSweepAt).put("type", "device").put("text", fresh.joinToString("، ")).put("at", netSweepAt)))
+            }
+            note("net sweep: ${found.size} devices")
+        }.start()
+    }
+    private fun speedTest(): JSONObject {
+        val urls = listOf("https://speed.cloudflare.com/__down?bytes=15000000", "https://github.com/habwara/majlisna/releases/latest/download/majlisna-android.apk")
+        for (u in urls) try {
+            val c = URL(u).openConnection() as HttpURLConnection
+            c.connectTimeout = 8000; c.readTimeout = 20000; c.instanceFollowRedirects = true
+            val t0 = System.nanoTime(); val buf = ByteArray(64 * 1024); var total = 0L
+            c.inputStream.use { s -> while (true) { val n = s.read(buf); if (n < 0) break; total += n; if (System.nanoTime() - t0 > 12_000_000_000L) break } }
+            val secs = (System.nanoTime() - t0) / 1e9
+            if (total > 200_000) return JSONObject().put("mbps", Math.round(total * 8 / secs / 1e6 * 10) / 10.0).put("bytes", total).put("secs", Math.round(secs * 10) / 10.0)
+        } catch (e: Exception) { }
+        return JSONObject().put("error", "تعذر القياس")
+    }
+
+    // ---------- Kids mode: open an app, come back to the majlis when the time is up ----------
+    private fun kidsApply(k: JSONObject?) {
+        main.removeCallbacks(kidsEnd); main.removeCallbacks(kidsWarn)
+        val until = k?.optLong("until") ?: 0L; val app = k?.optString("app") ?: ""
+        val left = until - System.currentTimeMillis()
+        if (app.isEmpty() || left <= 0) return
+        Apps.launch(this, app)
+        if (left > 60_000) main.postDelayed(kidsWarn, left - 60_000)
+        main.postDelayed(kidsEnd, left)
+        note("kids mode: $app for ${left / 60000} min")
+    }
+    private fun kidsOver() {
+        prefs.put("kids", JSONObject().put("app", "").put("until", 0)); savePrefs()
+        toast("انتهى وقت الأطفال، حياكم الله في مجلسنا")
+        openHome()
+        push(JSONObject().put("event", "state").put("rev", rev))
     }
 
     // ---------- Volume ----------
