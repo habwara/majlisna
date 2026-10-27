@@ -23,6 +23,7 @@ const sandbox = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(SRC, "app", "data.js"), "utf8"), sandbox);
 const w = sandbox.window;
 fs.writeFileSync(path.join(OUT, "data.json"), JSON.stringify({
-  cities: w.MAJLIS_CITIES, stations: w.MAJLIS_STATIONS, backgrounds: w.MAJLIS_BACKGROUNDS, adhans: w.MAJLIS_ADHANS, baseApps: []
+  cities: w.MAJLIS_CITIES, stations: w.MAJLIS_STATIONS, backgrounds: w.MAJLIS_BACKGROUNDS, adhans: w.MAJLIS_ADHANS, baseApps: [],
+  adhkarMorning: w.MAJLIS_ADHKAR_MORNING || [], adhkarEvening: w.MAJLIS_ADHKAR_EVENING || [], proverbs: w.MAJLIS_PROVERBS || []
 }));
 ok("android/app/src/main/assets");
