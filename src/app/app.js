@@ -25,7 +25,7 @@
     welcome: "حبابكم عشرة", welcomeSub: "حياكم الله في داركم",
     city: "riyadh", theme: "nile", ambientMin: 10, takeover: true, rotate: 0, bg: 0, size: "large",
     guestName: "", menu: [], menuNote: "", services: { wc: "", prayerRoom: "", note: "" },
-    guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true,
+    guestMode: false, privateApps: [], guestbook: [], receptionStation: "sa", reception: false, adhkar: true, wifiQrOnly: false, adhkarOpen: "", adhkarIndex: 0, proverbs: [], ramadanMode: true, fridayReminder: true,
     hidden: [], order: [], hiddenBg: [],
     wifi: { ssid: "", pass: "", type: "WPA" }, events: [],
     alertOverlay: true, chime: true, tvToast: true, remind: 10, radio: "", ramadanDays: [], sleepMin: 60,
@@ -132,6 +132,19 @@
     var best = null, t = now.getTime();
     (prefs.events || []).forEach(function (e) { if (e.at && e.at > t && e.at - t < 3 * 3600000 && (!best || e.at < best.at)) best = e; });
     var el = $("bigCount");
+    var r = ramadanInfo(now);
+    if (r && !best) {
+      var ph = prayerTimes.length > 4 ? prayerTimes[4].time : null;
+      if (ph && now < ph) {
+        var s2 = Math.round((ph - t) / 1000), h2 = Math.floor(s2 / 3600), m2 = Math.floor((s2 % 3600) / 60), x2 = s2 % 60;
+        el.innerHTML = "الإفطار بعد <b>" + (h2 ? h2 + ":" : "") + (m2 < 10 && h2 ? "0" : "") + m2 + ":" + (x2 < 10 ? "0" : "") + x2 + "</b>";
+      } else {
+        var fj = prayerTimes.length > 6 ? prayerTimes[6].time : prayerTimes[0].time;
+        el.innerHTML = "الإمساك <b>" + time12(fj) + "</b>" + (r.oddNight ? " · ليلة " + arDigits(r.night) + " وترية" : "");
+      }
+      if (bigShown !== "ramadan") { bigShown = "ramadan"; el.classList.add("show"); }
+      return;
+    }
     if (!best) { if (bigShown) { bigShown = ""; el.classList.remove("show"); } return; }
     var s = Math.round((best.at - t) / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
     var txt = (h ? h + ":" : "") + (m < 10 && h ? "0" : "") + m + ":" + (sec < 10 ? "0" : "") + sec;
@@ -162,7 +175,7 @@
   }
 
   // ---------- Clock & dates ----------
-  var lastMinute = -1, lastDay = -1;
+  var lastMinute = -1, lastDay = -1, lastMinuteExtra = -1;
   function tick() {
     var d = new Date();
     if (d.getMinutes() !== lastMinute) {
@@ -176,6 +189,7 @@
       fridayRadioTick(d);
     }
     bigCountdown(d);
+    if (d.getMinutes() !== lastMinuteExtra) { lastMinuteExtra = d.getMinutes(); ramadanTick(d); fridayTick(d); }
     if (d.getDate() !== lastDay) {
       lastDay = d.getDate();
       $("dayAr").textContent = fmt("ar-SA", { weekday: "long" }, d);
@@ -202,9 +216,13 @@
     if (now >= byKey.asr) return { key: "e", list: window.MAJLIS_ADHKAR_EVENING || [] };
     return null;
   }
+  function dayNumber(d) { return Math.floor((d || new Date()).getTime() / 86400000); }
+  function hadithOfDay() { var l = window.MAJLIS_HADITH || []; return l.length ? l[dayNumber() % l.length] : null; }
+  function proverbOfDay() { var l = (window.MAJLIS_PROVERBS || []).concat(prefs.proverbs || []); return l.length ? l[dayNumber() % l.length] : ""; }
   function rotateAyah() {
     var now = new Date(), dz = currentAdhkar(now);
-    var list = dz && dz.list.length ? dz.list : (window.MAJLIS_AYAT || []);
+    var h = hadithOfDay();
+    var list = dz && dz.list.length ? dz.list : (window.MAJLIS_AYAT || []).concat(h ? [h.t + " · " + h.s] : []);
     var key = dz && dz.list.length ? dz.key : "a";
     if (!list.length) return;
     var i = Math.floor(Date.now() / ((key === "a" ? 20 : 5) * 60000)) % list.length;
@@ -377,6 +395,32 @@
     } catch (e) {}
   }
 
+  // ---------- Ramadan mode ----------
+  // In Ramadan: iftar countdown by the second, imsak after maghrib, the iftar dua at maghrib, odd nights flagged.
+  function ramadanInfo(now) {
+    if (!prefs.ramadanMode) return null;
+    var hp = hijriParts(now); if (!hp || hp.month !== 9) return null;
+    var mg = prayerTimes.length > 4 ? prayerTimes[4].time : null;
+    var night = mg && now >= mg ? hp.day + 1 : hp.day;
+    return { day: hp.day, night: night, oddNight: night >= 21 && night % 2 === 1 };
+  }
+  var iftarShown = "";
+  function ramadanTick(now) {
+    var r = ramadanInfo(now); if (!r || prayerTimes.length < 5) return;
+    var mg = prayerTimes[4].time, key = now.toDateString();
+    if (now >= mg && now - mg < 4 * 60000 && iftarShown !== key) {
+      iftarShown = key;
+      setTimeout(function () { showMessageCard({ id: "iftar" + key, text: "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الْأَجْرُ إِنْ شَاءَ اللَّهُ", sub: "تقبّل الله صيامكم · " + arDigits(r.day) + " رمضان" }); }, 3 * 60000 + 5000);
+    }
+  }
+  // Friday: an hour before Jumu'ah, a quiet reminder of the sunnah.
+  var fridayShown = "";
+  function fridayTick(now) {
+    if (!prefs.fridayReminder || now.getDay() !== 5 || prayerTimes.length < 3) return;
+    var dh = prayerTimes[2].time, diff = dh - now, key = now.toDateString();
+    if (diff > 0 && diff <= 60 * 60000 && fridayShown !== key) { fridayShown = key; showQuiet("ساعة على صلاة الجمعة", "الغسل والتطيّب والتبكير · وسورة الكهف"); }
+  }
+
   // ---------- Occasions (Hijri) ----------
   function hijriParts(d) {
     try {
@@ -410,6 +454,7 @@
       else if (n > 0) list.push({ days: n, text: e.name, custom: true });
     });
     if (prefs.friday && today.getDay() === 5) list.unshift({ today: true, text: "جمعة مباركة", sub: "سورة الكهف" });
+    var rr = ramadanInfo(today); if (rr && rr.oddNight) list.unshift({ today: true, text: "ليلة " + arDigits(rr.night), sub: "تحرّوا ليلة القدر" });
     list.sort(function (a, b) { return (a.today ? -1 : a.days) - (b.today ? -1 : b.days); });
     var html = "";
     list.slice(0, 2).forEach(function (o) {
@@ -516,7 +561,7 @@
       serviceApps.forEach(function (a) {
         present[a.id] = true;
         if (byId[a.id]) byId[a.id].icon2 = a.icon;
-        else byId[a.id] = { id: a.id, title: a.title, icon: a.icon, isNew: true };
+        else byId[a.id] = { id: a.id, title: a.title, icon: a.icon, isNew: Platform.id === "webos" };
       });
       Object.keys(byId).forEach(function (id) { if (!present[id]) delete byId[id]; });
     }
@@ -617,7 +662,7 @@
   function doAction(act) {
     if (act === "radio") openOverlay("radio");
     else if (act === "wifi") openOverlay("wifi");
-    else if (act === "menu") openOverlay("menu");
+    else if (act === "adhkar") openAdhkar(prefs.adhkarOpen || "m", prefs.adhkarIndex || 0, true);
     else if (act === "guests") openOverlay("guests");
     else if (act === "reception") enterReception();
     else if (act === "arrange") startMove();
@@ -671,7 +716,6 @@
   function openOverlay(id) {
     openId = id;
     if (id === "wifi") buildWifi();
-    if (id === "menu") buildMenu();
     if (id === "guests") buildGuests();
     if (id === "radio") { radioFocus = Math.max(0, stationIndex(prefs.radio)); buildStations(); }
     if (id === "settings") { settings.i = 0; settings.offset = 0; get("/api/state", function (s) { if (s) status = s.status || status; buildSettings(); }); buildSettings(); }
@@ -681,10 +725,11 @@
     if (!openId) return;
     $(openId).classList.remove("show");
     if (openId === "settings") { mergeApps(); render(); }
+    if (openId === "adhkar" && prefs.adhkarOpen) { prefs.adhkarOpen = ""; savePrefs(["adhkarOpen"]); }
     openId = "";
   }
 
-  // Guest Wi-Fi
+  // Wi-Fi
   function wifiEscape(s) { return String(s).replace(/([\\;,:"])/g, "\\$1"); }
   function buildWifi() {
     var w = prefs.wifi || {};
@@ -695,7 +740,7 @@
         : '<div class="wifi-empty">لم تتم إضافة شبكة بعد.<br>أضفها في ملف majlis.config.json قبل التركيب.</div>';
       return;
     }
-    if (!$("wifiQr")) {
+    if (!$("wifiQr") || !$("wifiSsid")) {
       body.innerHTML = '<div id="wifiQr" class="qr"></div><div class="wifi-info"><div class="wifi-hint">امسح الرمز بكاميرا الجوال للاتصال مباشرة</div><div class="wifi-hint en">Scan with your phone camera to join</div><div class="wifi-label">اسم الشبكة · Network</div><div id="wifiSsid" class="wifi-value"></div><div class="wifi-label">كلمة المرور · Password</div><div id="wifiPass" class="wifi-value pass"></div></div>';
     }
     var type = w.pass ? (w.type || "WPA") : "nopass";
@@ -705,6 +750,11 @@
       var q = qrcode(0, "M"); q.addData(data); q.make();
       $("wifiQr").innerHTML = q.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
     } catch (e) { $("wifiQr").textContent = ""; }
+    var info = body.querySelector(".wifi-info");
+    if (prefs.wifiQrOnly) {
+      info.innerHTML = '<div class="wifi-hint">امسح الرمز بكاميرا الجوال للاتصال مباشرة</div><div class="wifi-hint en">Scan with your phone camera to join</div>';
+      return;
+    }
     $("wifiSsid").textContent = w.ssid;
     $("wifiPass").textContent = w.pass || "بدون كلمة مرور";
   }
@@ -748,23 +798,60 @@
       '<g transform="rotate(' + deg + ' 140 140)"><path d="M140 36 L158 140 L140 128 L122 140 Z" fill="var(--gold-light)"/><path d="M140 244 L122 140 L140 152 L158 140 Z" fill="var(--panel-line)"/></g>' +
       '<circle cx="' + tx + '" cy="' + ty + '" r="9" fill="var(--gold)"/><text x="' + tx + '" y="' + (ty + 5) + '" text-anchor="middle" fill="var(--base)" font-size="12" font-family="Kufi">🕋</text><circle cx="140" cy="140" r="6" fill="var(--gold-light)"/></svg>';
   }
+  // ---------- Adhkar panel: one dhikr at a time, up/down to move, left/right for morning/evening ----------
+  var dz = { set: "m", i: 0 };
+  function dzList() { return (dz.set === "e" ? window.MAJLIS_ADHKAR_EVENING : window.MAJLIS_ADHKAR_MORNING) || []; }
+  function openAdhkar(set, i, fromRemote) {
+    dz.set = set === "e" ? "e" : "m"; dz.i = i || 0;
+    if (openId !== "adhkar") { closeOverlay(); openId = "adhkar"; $("adhkar").classList.add("show"); }
+    renderAdhkar();
+    if (fromRemote && !prefs.adhkarOpen) { prefs.adhkarOpen = dz.set; prefs.adhkarIndex = dz.i; savePrefs(["adhkarOpen", "adhkarIndex"]); }
+  }
+  function renderAdhkar() {
+    var list = dzList(); if (!list.length) return;
+    dz.i = ((dz.i % list.length) + list.length) % list.length;
+    $("dzM").classList.toggle("on", dz.set === "m"); $("dzE").classList.toggle("on", dz.set === "e");
+    $("dzText").textContent = list[dz.i];
+    $("dzCount").textContent = arDigits(dz.i + 1) + " / " + arDigits(list.length);
+  }
+  function adhkarKey(k) {
+    if (k === 40 || k === 13) dz.i++; else if (k === 38) dz.i--;
+    else if (k === 37 || k === 39) { dz.set = dz.set === "m" ? "e" : "m"; dz.i = 0; }
+    else return;
+    renderAdhkar();
+    prefs.adhkarOpen = dz.set; prefs.adhkarIndex = dz.i; savePrefs(["adhkarOpen", "adhkarIndex"]);
+  }
+
   function buildGuests() {
     var w = prefs.wifi || {}, sv = prefs.services || {}, u = guestUrl(), deg = qiblaBearing(), html = "";
-    html += '<div class="svc-col"><div class="svc-title">واي فاي الضيوف · Wi-Fi</div>';
+    html += '<div class="svc-col"><div class="svc-title">الواي فاي · Wi-Fi</div>';
     if (w.ssid) {
       var type = w.pass ? (w.type || "WPA") : "nopass";
-      html += '<div class="qr">' + qrSvg("WIFI:T:" + type + ";S:" + wifiEscape(w.ssid) + ";" + (w.pass ? "P:" + wifiEscape(w.pass) + ";" : "") + ";", 6) + '</div><div class="svc-cap">امسح للاتصال · Scan to join<b>' + esc(w.ssid) + "</b></div>";
+      html += '<div class="qr">' + qrSvg("WIFI:T:" + type + ";S:" + wifiEscape(w.ssid) + ";" + (w.pass ? "P:" + wifiEscape(w.pass) + ";" : "") + ";", 6) + '</div><div class="svc-cap">امسح للاتصال · Scan to join' + (prefs.wifiQrOnly ? "" : "<b>" + esc(w.ssid) + "</b>") + "</div>";
     } else html += '<div class="svc-cap">لم تتم إضافة شبكة بعد</div>';
     html += "</div>";
-    html += '<div class="svc-col"><div class="svc-title">اتجاه القبلة · Qibla</div>' + compass(deg) + '<div class="svc-cap"><span class="qibla-deg">' + Math.round(deg) + "°</span> من الشمال · " + esc(city().ar) + "</div></div>";
-    html += '<div class="svc-col"><div class="svc-title">صفحة الضيوف · Guest page</div>';
-    if (u) html += '<div class="qr">' + qrSvg(u, 6) + '</div><div class="svc-cap">اطلب ضيافة أو اترك تحية<b>' + esc(u.replace("http://", "")) + "</b></div>";
-    else html += '<div class="svc-cap">متاحة مع لوحة التحكم</div>';
+    // Hospitality: the menu, and the guest page QR to order from a phone
+    html += '<div class="svc-col"><div class="svc-title">الضيافة · Hospitality</div><div class="svc-menu">';
+    var items = prefs.menu || [];
+    if (!items.length) html += '<div class="menu-note">أضف قائمة الضيافة من الجوال</div>';
+    else {
+      html += items.slice(0, 5).map(function (it) {
+        var name = typeof it === "string" ? it : it.name, note = typeof it === "string" ? "" : it.note;
+        return '<div class="menu-item"><span class="m-ico">' + menuIcon(name) + "</span>" + esc(name) + (note ? "<small>" + esc(note) + "</small>" : "") + "</div>";
+      }).join("");
+      if (prefs.menuNote) html += '<div class="menu-note">' + esc(prefs.menuNote) + "</div>";
+    }
+    var pv = proverbOfDay(); if (pv) html += '<div class="menu-note">«' + esc(pv) + '» <small style="color:var(--gold)">مثل اليوم</small></div>';
+    html += "</div>";
+    if (u) html += '<div class="svc-order"><div class="qr">' + qrSvg(u, 4) + '</div><div class="t"><b>اطلب من جوالك</b>امسح الرمز، اختر ما تحب، أو اترك تحية</div></div>';
+    html += "</div>";
+    // Qibla and the house
+    html += '<div class="svc-col"><div class="svc-title">اتجاه القبلة · Qibla</div>' + compass(deg) + '<div class="svc-cap"><span class="qibla-deg">' + Math.round(deg) + "°</span> من الشمال · " + esc(city().ar) + "</div>";
     var lines = "";
     if (sv.wc) lines += '<div class="svc-line"><span>دورة المياه</span>' + esc(sv.wc) + "</div>";
     if (sv.prayerRoom) lines += '<div class="svc-line"><span>المصلى</span>' + esc(sv.prayerRoom) + "</div>";
     if (sv.note) lines += '<div class="svc-line"><span>ملاحظة</span>' + esc(sv.note) + "</div>";
-    if (lines) html += '<div class="svc-lines" style="margin-top:18px">' + lines + "</div>";
+    if (lines) html += '<div class="svc-lines" style="margin-top:14px">' + lines + "</div>";
     html += "</div>";
     $("svcBody").innerHTML = html;
   }
@@ -808,6 +895,7 @@
     lastRequestId = g.id;
     if (g.type === "request") showQuiet("طلب من الضيوف: " + g.text, g.name ? "من " + g.name : "");
     else if (g.type === "note") showMessageCard({ id: g.id, text: g.text, sub: g.name ? "تحية من " + g.name : "تحية من ضيوفنا" });
+    else if (g.type === "dua") showMessageCard({ id: g.id, text: "🤲 " + g.text, sub: g.name ? "دعاء من " + g.name : "دعاء من ضيوفنا" });
   }
 
   // Quran radio
@@ -908,6 +996,7 @@
     });
 
     head("الضيوف");
+    toggle("الواي فاي: الباركود فقط", "يخفي اسم الشبكة وكلمة المرور من الشاشة وصفحة الضيف", "wifiQrOnly");
     toggle("وضع الضيوف", "يخفي التطبيقات الخاصة ومناسبات العائلة", "guestMode", function () { applyTexts(); mergeApps(); render(); renderOccasions(); });
     chooser("إذاعة وضع الاستقبال", "تشتغل بصوت منخفض عند دخول الضيوف", (STATIONS[stationIndex(prefs.receptionStation || "sa")] || STATIONS[0] || {}).ar || "", function (s) {
       prefs.receptionStation = cycle(STATIONS.map(function (x) { return x.id; }), prefs.receptionStation || "sa", s); savePrefs(["receptionStation"]);
@@ -931,6 +1020,8 @@
     });
     toggle("وضع الجمعة", "تذكير بسورة الكهف وتسمية صلاة الجمعة", "friday", function () { computePrayers(); renderOccasions(); });
     toggle("إذاعة القرآن صباح الجمعة", "تشتغل تلقائياً على شاشة المجلس", "fridayRadio");
+    toggle("وضع رمضان", "عدّاد الإفطار، الإمساك، دعاء الإفطار، والليالي الوترية", "ramadanMode");
+    toggle("تذكير سنن الجمعة", "قبل صلاة الجمعة بساعة", "fridayReminder");
     toggle("أذكار الصباح والمساء", "تحت الترحيب: الصباح بعد الفجر، والمساء بعد العصر", "adhkar", function () { ayahIndex = -1; rotateAyah(); });
     if (Platform.hasHelper) chooser("تذكير قبل الأذان", "إشعار قبل موعد الصلاة", prefs.remind ? arDigits(prefs.remind) + " دقائق" : "متوقف", function (s) {
       prefs.remind = cycle(REMIND, prefs.remind, s); savePrefs(["remind"]);
@@ -1027,6 +1118,9 @@
     ambTimer = setInterval(nextAmbientImage, 40000);
   }
   function nextAmbientImage() {
+    var duas = (prefs.guestbook || []).filter(function (g) { return g.type === "dua"; });
+    if (duas.length && ambIndex % 2 === 1) { var g = duas[Math.floor(ambIndex / 2) % duas.length]; $("ambAyah").textContent = "🤲 " + g.text + (g.name ? " · " + g.name : ""); }
+    else $("ambAyah").textContent = (window.MAJLIS_AYAT || [])[ayahIndex] || $("ayah").textContent;
     var list = visibleBgs();
     if (!list.length) return;
     var b = list[ambIndex % list.length];
@@ -1131,11 +1225,12 @@
     if (k === 403) { changeBackground(-1); return; }              // red
     if (k === 404) { changeBackground(1); return; }               // green
     if (k === 405) { if (radioPlaying) stopRadio(); else if (stationIndex(prefs.radio) >= 0) playStation(STATIONS[stationIndex(prefs.radio)]); else openOverlay("radio"); return; } // yellow
-    if (k === 406) { if (openId === "wifi") closeOverlay(); else { closeOverlay(); openOverlay("wifi"); } return; } // blue
+    if (k === 406) { if (openId === "guests") closeOverlay(); else { closeOverlay(); openOverlay("guests"); } return; } // blue
     if (openId) {
       if (Platform.backKeys.indexOf(k) !== -1) { closeOverlay(); return; }
       if (openId === "radio") radioKey(k);
       else if (openId === "settings") settingsKey(k);
+      else if (openId === "adhkar") adhkarKey(k);
       else if (k === 13) closeOverlay();
       return;
     }
@@ -1182,10 +1277,11 @@
     if (prefs.city !== oldCity || force) { computePrayers(); loadWeather(); }
     renderOccasions();
     if (!!prefs.reception !== receptionOn) { if (prefs.reception) enterReception(); else exitReception(); }
+    if (prefs.adhkarOpen && (openId !== "adhkar" || dz.set !== prefs.adhkarOpen || dz.i !== prefs.adhkarIndex)) openAdhkar(prefs.adhkarOpen, prefs.adhkarIndex || 0, false);
+    else if (!prefs.adhkarOpen && openId === "adhkar") closeOverlay();
     bgShown = "";
     showBackground(visibleBg(Math.min(prefs.bg, backgrounds.length - 1), 1));
     if (openId === "wifi") buildWifi();
-    if (openId === "menu") buildMenu();
     if (openId === "guests") buildGuests();
     if (!openId && !moving) { mergeApps(); render(); }
   }
@@ -1250,7 +1346,9 @@
   }
   if (location.hash === "#settings-demo") { status = { ip: "192.168.1.40", port: 8090, pin: "2580" }; openOverlay("settings"); }
   if (location.hash === "#wifi-demo") { prefs.wifi = { ssid: "Majlis-Guest", pass: "welcome1448", type: "WPA" }; openOverlay("wifi"); }
-  if (location.hash === "#menu-demo") { status = { ip: "192.168.1.40", port: 8090 }; prefs.menu = ["قهوة سودانية", "شاي بالنعناع", "كركدي بارد", "تمر وحلويات", "عشاء الساعة ٩"]; prefs.menuNote = "تفضلوا، البيت بيتكم"; openOverlay("menu"); }
+  if (location.hash === "#ramadan-demo") { prefs.ramadanMode = true; ramadanInfo = function () { return { day: 23, night: 23, oddNight: true }; }; renderOccasions(); bigCountdown(new Date()); }
+  if (location.hash === "#adhkar-demo") openAdhkar("m", 0, false);
+  if (location.hash === "#menu-demo") { status = { ip: "192.168.1.40", port: 8090 }; prefs.menu = ["قهوة سودانية", "شاي بالنعناع", "كركدي بارد", "تمر وحلويات", "عشاء الساعة ٩"]; prefs.menuNote = "تفضلوا، البيت بيتكم"; openOverlay("guests"); }
   if (location.hash === "#guests-demo") { status = { ip: "192.168.1.40", port: 8090 }; prefs.wifi = { ssid: "Majlisna-Guest", pass: "welcome1448", type: "WPA" }; prefs.services = { wc: "أول باب يمين الممر", prayerRoom: "الغرفة المقابلة للمجلس", note: "السجاد والمصاحف في الدولاب" }; openOverlay("guests"); }
   if (location.hash === "#reception") { prefs.guestName = "أبو أحمد"; applyTexts(); enterReception(); }
   if (location.hash === "#arrange") startMove();

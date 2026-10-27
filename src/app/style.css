@@ -159,7 +159,7 @@ html, body {
 }
 .tile img, .tile .glyph { width: 64px; height: 64px; border-radius: 14px; object-fit: contain; box-shadow: 0 2px 6px rgba(0, 0, 0, .4); }
 .tile .glyph { display: flex; align-items: center; justify-content: center; background: var(--panel-strong); border: 1px solid var(--panel-line); font-size: 32px; color: var(--gold-light); }
-.tile .label { margin-top: 4px; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 146px; text-shadow: 0 2px 6px rgba(0, 0, 0, .9); }
+.tile .label { font-family: "Kufi", sans-serif; margin-top: 4px; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 146px; text-shadow: 0 2px 6px rgba(0, 0, 0, .9); }
 .tile.focus { transform: scale(1.08); border-color: var(--gold-light); background: rgba(0, 0, 0, .25); }
 .tile.focus .label { color: var(--gold-light); }
 .row.inputs .tile { width: auto; height: 46px; padding: 0 22px; border-radius: 24px; background: var(--panel); border-color: var(--panel-line); }
@@ -378,8 +378,25 @@ html, body {
 .menu-order div.t { font-size: 24px; color: var(--muted); line-height: 1.5; margin-inline-start: 24px; }
 .menu-order div.t b { display: block; font-weight: 400; color: var(--gold-light); font-size: 28px; }
 
-/* ---------- Guest services (خدمات الضيوف) ---------- */
-.svc-panel { width: 1500px; }
+/* ---------- Adhkar panel ---------- */
+.dz-panel { width: 1500px; height: 760px; }
+.dz-sets { display: flex; justify-content: center; margin-bottom: 30px; }
+.dz-set { padding: 8px 34px; border-radius: 30px; border: 1.5px solid var(--panel-line); color: var(--muted); font-size: 26px; margin: 0 12px; }
+.dz-set.on { background: var(--focus-bg); border-color: var(--gold-light); color: var(--gold-light); }
+.dz-text { font-family: "Amiri Quran", serif; font-size: 58px; line-height: 1.9; color: var(--cream); text-align: center; padding: 0 60px; min-height: 330px; display: flex; align-items: center; justify-content: center; }
+.dz-count { text-align: center; font-size: 26px; color: var(--gold); margin-top: 10px; }
+.size-large .dz-text { font-size: 64px; } .size-xl .dz-text { font-size: 70px; }
+
+/* ---------- Guests panel (الضيوف): Wi-Fi, hospitality, qibla and the house ---------- */
+.svc-panel { width: 1700px; padding-bottom: 60px; }
+.svc-menu { text-align: right; padding: 0 24px; }
+.svc-menu .menu-item { font-size: 25px; padding: 5px 14px; margin-bottom: 6px; }
+.svc-menu .menu-item .m-ico { font-size: 30px; margin-inline-end: 12px; }
+.svc-menu .menu-note { font-size: 22px; margin-top: 10px; }
+.svc-order { display: flex; align-items: center; justify-content: center; margin-top: 16px; }
+.svc-order .qr { width: 116px; height: 116px; padding: 6px; border-radius: 10px; margin: 0; }
+.svc-order .t { font-size: 20px; color: var(--muted); margin-inline-start: 18px; text-align: right; line-height: 1.5; }
+.svc-order .t b { display: block; font-weight: 400; color: var(--gold-light); font-size: 24px; }
 .svc-body { display: flex; align-items: stretch; }
 .svc-col { flex: 1; text-align: center; }
 .svc-col + .svc-col { border-inline-start: 1px solid var(--panel-line); }

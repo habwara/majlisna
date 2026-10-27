@@ -118,9 +118,8 @@
 
   <nav id="actions" class="actions">
     <div class="action" data-act="radio"><span class="a-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></span><span>إذاعة القرآن</span><span id="radioNow" class="radio-now"></span></div>
-    <div class="action" data-act="wifi"><span class="a-icon"><svg viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8.5 15.5a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.3" fill="currentColor"/></svg></span><span>واي فاي الضيوف</span></div>
-    <div class="action" data-act="menu"><span class="a-icon"><svg viewBox="0 0 24 24"><path d="M4 10h10a3 3 0 0 1 0 6H4z"/><path d="M14 11h2.5a2 2 0 0 1 0 4H14M5 16l1 4h6l1-4"/><path d="M7 7c0-1.5 1-1.5 1-3M10 7c0-1.5 1-1.5 1-3"/></svg></span><span>الضيافة</span></div>
-    <div class="action" data-act="guests"><span class="a-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2A4.5 4.5 0 0 1 22 18.5"/></svg></span><span>خدمات الضيوف</span></div>
+    <div class="action" data-act="adhkar"><span class="a-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="4.5" r="1.3" fill="currentColor"/><circle cx="19.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="19.5" r="1.3" fill="currentColor"/><circle cx="4.5" cy="12" r="1.3" fill="currentColor"/><path d="M12 21v2.5"/></svg></span><span>الأذكار</span></div>
+    <div class="action" data-act="guests"><span class="a-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2A4.5 4.5 0 0 1 22 18.5"/></svg></span><span>الضيوف</span></div>
     <div class="action" data-act="ambient"><span class="a-icon"><svg viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/></svg></span><span>وضع الهدوء</span></div>
     <div class="action" data-act="bg"><span class="a-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.6"/></svg></span><span>الخلفية</span></div>
     <div class="action" data-act="settings"><span class="a-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span><span>الإعدادات</span></div>
@@ -134,7 +133,7 @@
   <!-- Overlays -->
   <div id="wifi" class="overlay">
     <div class="panel wifi-panel">
-      <div class="panel-title">واي فاي الضيوف <span class="en">Guest Wi-Fi</span></div>
+      <div class="panel-title">الواي فاي <span class="en">Wi-Fi</span></div>
       <div class="wifi-body">
         <div id="wifiQr" class="qr"></div>
         <div class="wifi-info">
@@ -150,19 +149,21 @@
     </div>
   </div>
 
-  <div id="menu" class="overlay">
-    <div class="panel menu-panel">
-      <div class="panel-title">الضيافة <span class="en">Hospitality</span></div>
-      <div id="menuBody"></div>
+  <div id="guests" class="overlay">
+    <div class="panel svc-panel">
+      <div class="panel-title">الضيوف <span class="en">Guests</span></div>
+      <div class="svc-body" id="svcBody"></div>
       <div class="panel-foot">رجوع للإغلاق · BACK to close</div>
     </div>
   </div>
 
-  <div id="guests" class="overlay">
-    <div class="panel svc-panel">
-      <div class="panel-title">خدمات الضيوف <span class="en">Guest Services</span></div>
-      <div class="svc-body" id="svcBody"></div>
-      <div class="panel-foot">رجوع للإغلاق · BACK to close</div>
+  <div id="adhkar" class="overlay">
+    <div class="panel dz-panel">
+      <div class="panel-title">الأذكار <span class="en">Adhkar</span></div>
+      <div class="dz-sets"><span id="dzM" class="dz-set">أذكار الصباح</span><span id="dzE" class="dz-set">أذكار المساء</span></div>
+      <div id="dzText" class="dz-text"></div>
+      <div id="dzCount" class="dz-count"></div>
+      <div class="panel-foot">▲ ▼ للتنقل · ◀ ▶ الصباح أو المساء · رجوع للإغلاق</div>
     </div>
   </div>
 
